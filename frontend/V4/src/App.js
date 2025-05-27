@@ -10,7 +10,7 @@ import Biblioteca from './Components/Bottons/Biblioteca'; // etc.
 import Boletines from './Components/Bottons/Boletines'; // etc.
 import Quienes from './Components/Bottons/Quienes'; // etc.
 import Galeria from './Components/Bottons/Galeria'; // etc.
-
+jajaja payaso
 
 function App() {
   return (
