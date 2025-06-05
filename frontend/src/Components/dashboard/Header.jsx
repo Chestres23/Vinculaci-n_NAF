@@ -1,7 +1,7 @@
 import React from 'react';
-import '../App.css';
-import logo from '../assets/escudo.png';
-import nafLogo from '../assets/naf.jpg';
+import '../../App.css';
+import logo from '../../assets/images/escudo.png';
+import nafLogo from '../../assets/images/naf.jpg';
 import { Link } from 'react-router-dom';
 
 function Header() {

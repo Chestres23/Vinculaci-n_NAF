@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import fondo6 from "../../assets/fondo6.jpg";
+import fondo6 from "../../assets/images/fondo6.jpg";
 
 function Servicios() {
   return (

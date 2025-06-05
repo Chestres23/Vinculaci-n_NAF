@@ -5,13 +5,13 @@ import { motion } from 'framer-motion';
 
 
 
-import fondo7 from "../../assets/fondo2.jpg";
-import gale1 from '../../assets/gale1.jpg';
-import gale2 from '../../assets/gale2.jpg';
-import gale3 from '../../assets/gale3.jpg';
-import gale4 from '../../assets/gale4.jpg';
-import gale5 from '../../assets/gale5.jpg';
-import gale6 from '../../assets/gale6.jpeg';
+import fondo7 from "../../assets/images/fondo2.jpg";
+import gale1 from '../../assets/images/gale1.jpg';
+import gale2 from '../../assets/images/gale2.jpg';
+import gale3 from '../../assets/images/gale3.jpg';
+import gale4 from '../../assets/images/gale4.jpg';
+import gale5 from '../../assets/images/gale5.jpg';
+import gale6 from '../../assets/images/gale6.jpeg';
 
 const imagenes = [
   { src: gale3, alt: "Imagen 3" },

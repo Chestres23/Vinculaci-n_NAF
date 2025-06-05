@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import fondo4 from '../../assets/fondo4.jpg';
+import fondo4 from '../../assets/images/fondo4.jpg';
 
 const Boletines = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

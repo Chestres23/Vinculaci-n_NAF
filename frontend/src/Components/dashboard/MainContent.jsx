@@ -1,9 +1,9 @@
 import React from 'react';
-import '../App.css';
+import '../../App.css';
 import { motion } from 'framer-motion';
 
-import fondo from '../assets/fondo2.jpg';
-import compu from '../assets/computadora.png';
+import fondo from '../../assets/images/fondo2.jpg';
+import compu from '../../assets/images/computadora.png';
 
 function MainContent() {
   return (

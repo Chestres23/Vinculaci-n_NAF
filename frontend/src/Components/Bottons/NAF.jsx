@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaLaptop, FaUsersCog, FaChartLine } from 'react-icons/fa';
-import fondo5 from '../../assets/fondo5.png';
-import NAFE from '../../assets/ejemNAF.jpg';
+import fondo5 from '../../assets/images/fondo5.png';
+import NAFE from '../../assets/images/ejemNAF.jpg';
 
 const NAF = () => {
   return (

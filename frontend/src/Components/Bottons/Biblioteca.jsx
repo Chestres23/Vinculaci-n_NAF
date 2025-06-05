@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import fondoBiblioteca from "../../assets/biblioteca.jpg";
+import fondoBiblioteca from "../../assets/images/biblioteca.jpg";
 
 const librosData = [
   {

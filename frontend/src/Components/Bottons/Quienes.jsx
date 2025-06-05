@@ -13,8 +13,8 @@ import {
   FaCheckDouble
 } from 'react-icons/fa';
 
-import inge from '../../assets/inge.jpg';
-import fondo2 from '../../assets/fondo2.jpg';
+import inge from '../../assets/images/inge.jpg';
+import fondo2 from '../../assets/images/fondo2.jpg';
 
 
 
