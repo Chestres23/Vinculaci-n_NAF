@@ -2,12 +2,12 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import MainContent from "./MainContent";
-import Servicios from "../bottons/Servicios";
-import NAF from "../bottons/NAF";
-import Biblioteca from "../bottons/Biblioteca";
-import Boletines from "../bottons/Boletines";
-import Quienes from "../bottons/Quienes";
-import Galeria from "../bottons/Galeria";
+import Servicios from "../buttons/Servicios";
+import NAF from "../buttons/NAF";
+import Biblioteca from "../buttons/Biblioteca";
+import Boletines from "../buttons/Boletines";
+import Quienes from "../buttons/Quienes";
+import Galeria from "../buttons/Galeria";
 
 const Dashboard = () => {
   return (
