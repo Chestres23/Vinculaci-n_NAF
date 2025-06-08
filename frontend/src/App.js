@@ -15,7 +15,7 @@ import Galeria from './Components/Bottons/Galeria'; // etc.
 function App() {
   return (
     <Router>
-      <div className="App flex flex-col min-h-screen">
+      <div className="app-container flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow">
           <Routes>
@@ -25,7 +25,7 @@ function App() {
             <Route path="/biblioteca" element={<Biblioteca />} />
             <Route path="/boletines" element={<Boletines />} />
             <Route path="/quienes" element={<Quienes />} />
-            <Route path="/galeria" element={<Galeria/>} />
+            <Route path="/galeria" element={<Galeria />} />
             {/* Más rutas si deseas */}
           </Routes>
         </main>

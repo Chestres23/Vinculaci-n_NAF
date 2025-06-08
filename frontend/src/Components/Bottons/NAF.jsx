@@ -7,7 +7,7 @@ import NAFE from '../../assets/ejemNAF.jpg';
 const NAF = () => {
   return (
     <section
-      className="py-16 px-6 min-h-screen flex items-center justify-center"
+      className="py-4 px-6 flex items-center justify-center"
       style={{
         backgroundImage: `url(${fondo5})`,
         backgroundSize: 'cover',
@@ -70,6 +70,24 @@ const NAF = () => {
             className="rounded-xl shadow-lg mx-auto max-w-full h-auto"
           />
         </div>
+        <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-6">
+          <a
+            href="/docs/convenio-naf-sangolqui.pdf"
+            download
+            className="bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-6 rounded-xl shadow transition-all duration-300"
+          >
+            Descargar Convenio ESPE - SRI ~ Matriz Sangolquí
+          </a>
+
+          <a
+            href="/docs/convenio-naf-latacunga.pdf"
+            download
+            className="bg-green-700 hover:bg-green-800 text-white font-semibold py-3 px-6 rounded-xl shadow transition-all duration-300"
+          >
+            Descargar Convenio ESPE - SRI ~ Latacunga
+          </a>
+        </div>
+
       </motion.div>
     </section>
   );

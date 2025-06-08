@@ -53,6 +53,13 @@ body {
   padding: 10px;
 }
 
+.menu-toggle {
+  display: none;
+  cursor: pointer;
+  padding: 10px;
+  text-align: right;
+}
+
 .navbar {
   display: flex;
   flex-wrap: wrap;
@@ -294,7 +301,32 @@ main, .main-page {
     height: 60px;
   }
 
- 
+    .menu-toggle {
+    display: block;
+  }
+
+  .navbar {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    background-color: #fff;
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .navbar.open {
+    display: flex;
+  }
+
+  .navbar a {
+    padding: 12px;
+    font-size: 16px;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
 
   .navbar a {
     font-size: 14px;
