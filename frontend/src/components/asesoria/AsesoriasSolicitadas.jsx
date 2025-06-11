@@ -5,10 +5,12 @@ import fondo6 from "../../assets/images/fondo6.jpg";
 
 const AsesoriasSolicitadas = () => {
   const [asesorias, setAsesorias] = useState([]);
+  const API = process.env.REACT_APP_API_URL;
 
   const fetchAsesorias = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/asesorias/todas");
+      const API = process.env.REACT_APP_API_URL;
+      const response = await fetch(`http://localhost:3001/api/asesorias/todas`);
       if (!response.ok) throw new Error("Error al obtener asesorías");
       const data = await response.json();
       setAsesorias(data);
@@ -109,7 +111,7 @@ const AsesoriasSolicitadas = () => {
     if (confirmacion.isConfirmed) {
       try {
         const res = await fetch(
-          "http://localhost:3001/api/asesorias/eliminar-realizadas",
+          `http://localhost:3001/api/asesorias/eliminar-realizadas`,
           {
             method: "DELETE",
           }
@@ -219,8 +221,9 @@ const AsesoriasSolicitadas = () => {
                 <th className="p-3">Discapacidad</th>
                 <th className="p-3">Contacto</th>
                 <th className="p-3">Detalle</th>
+                <th className="p-3">Fecha de Solicitud</th>
                 <th className="p-3">¿Realizada?</th>
-                <th className="p-3">Fecha</th>
+                <th className="p-3">Fecha de Asesoramiento</th>
                 <th className="p-3">Acción</th>
               </tr>
             </thead>
@@ -240,6 +243,11 @@ const AsesoriasSolicitadas = () => {
                     <td className="p-3">{item.Discapacidad ? "Sí" : "No"} </td>
                     <td className="p-3">{item.MedioContacto}</td>
                     <td className="p-3">{item.DetalleSolicitud}</td>
+                    <td className="p-3">
+                      {item.FechaSolicitud
+                        ? new Date(item.FechaSolicitud).toLocaleDateString()
+                        : "No registrada"}
+                    </td>
                     <td className="p-3">{item.Realizada ? "Sí" : "No"}</td>
                     <td className="p-3">
                       {item.FechaRealizacion

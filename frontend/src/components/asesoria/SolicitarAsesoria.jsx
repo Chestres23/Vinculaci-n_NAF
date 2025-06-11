@@ -26,6 +26,7 @@ function SolicitarAsesoria() {
   const [otroContribuyente, setOtroContribuyente] = useState("");
   const [otroMedio, setOtroMedio] = useState("");
   const [highlightedFields, setHighlightedFields] = useState([]);
+  const API = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     const obtenerDatosUsuario = async () => {
@@ -44,6 +45,7 @@ function SolicitarAsesoria() {
         });
       } else {
         try {
+          const API = process.env.REACT_APP_API_URL;
           const res = await fetch(
             `http://localhost:3001/api/users/${user.uid}`
           );
@@ -118,7 +120,7 @@ function SolicitarAsesoria() {
     });
 
     try {
-      const res = await fetch("http://localhost:3001/api/asesorias/nueva", {
+      const res = await fetch(`http://localhost:3001/api/asesorias/nueva`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),
@@ -129,7 +131,7 @@ function SolicitarAsesoria() {
       Swal.close();
       Swal.fire(
         "✅ Enviado",
-        "Tu solicitud fue registrada correctamente.",
+        "Tu solicitud fue registrada correctamente. Te enviamos una confirmación a tu correo electrónico.",
         "success"
       );
 

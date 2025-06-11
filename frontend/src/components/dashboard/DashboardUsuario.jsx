@@ -4,8 +4,8 @@ import Footer from "../layout/Footer";
 
 import MainContent from "../layout/MainContent";
 import Servicios from "../asesoria/SolicitarAsesoria";
-import Biblioteca from "../buttons/Biblioteca";
-import Boletines from "../buttons/Boletines";
+import Biblioteca from "../biblioteca/Biblioteca";
+import Boletines from "../boletines/Boletines";
 import Galeria from "../buttons/Galeria";
 import Quienes from "../buttons/Quienes";
 import NAF from "../buttons/NAF";
@@ -25,7 +25,6 @@ const DashboardUsuario = () => (
       <Route path="naf" element={<NAF />} />
       <Route path="perfil" element={<PerfilUsuario />} />
       <Route path="*" element={<Navigate to="inicio" />} />
-      
     </Routes>
 
     <Footer />

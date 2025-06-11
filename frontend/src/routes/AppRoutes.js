@@ -13,8 +13,8 @@ import DashboardPublic from "../components/dashboard/DashboardPublic";
 import MainContent from "../components/layout/MainContent";
 import Servicios from "../components/asesoria/SolicitarAsesoria";
 import NAF from "../components/buttons/NAF";
-import Biblioteca from "../components/buttons/Biblioteca";
-import Boletines from "../components/buttons/Boletines";
+import Biblioteca from "../components/biblioteca/Biblioteca";
+import Boletines from "../components/boletines/Boletines";
 import Quienes from "../components/buttons/Quienes";
 import Galeria from "../components/buttons/Galeria";
 

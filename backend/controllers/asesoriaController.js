@@ -1,5 +1,5 @@
 const { sql, poolPromise } = require("../db");
-const { enviarCorreoAsesoria } = require("../utils/emailSender");
+const { enviarCorreoAsesoria, enviarCorreoUsuario, enviarCorreoConfirmacionRealizada } = require("../utils/emailSender");
 
 const guardarAsesoria = async (req, res) => {
   const {
@@ -19,7 +19,6 @@ const guardarAsesoria = async (req, res) => {
   try {
     const pool = await poolPromise;
 
-    // Insertar asesoría y obtener el ID generado
     const insertResult = await pool
       .request()
       .input("UsuarioId", sql.UniqueIdentifier, UsuarioId || null)
@@ -53,10 +52,11 @@ const guardarAsesoria = async (req, res) => {
     const nuevaAsesoriaId = insertResult.recordset[0].Id;
 
     try {
-      await enviarCorreoAsesoria(req.body);
+      await enviarCorreoAsesoria(req.body); // al administrador
+      await enviarCorreoUsuario(req.body);  // al usuario solicitante
+
       res.status(201).json({ message: "Asesoría registrada correctamente" });
     } catch (correoError) {
-      // Si falla el correo, elimina la asesoría recién creada
       await pool
         .request()
         .input("Id", sql.UniqueIdentifier, nuevaAsesoriaId)
@@ -64,7 +64,7 @@ const guardarAsesoria = async (req, res) => {
 
       console.error("❌ Error al enviar correo, asesoría eliminada:", correoError);
       res.status(500).json({
-        error: "Error al enviar correo. La asesoría fue descartada.",
+        error: "Error al enviar los correos. La asesoría fue descartada.",
       });
     }
   } catch (error) {
@@ -92,6 +92,7 @@ const obtenerAsesorias = async (req, res) => {
         a.MedioContacto,
         a.DetalleSolicitud,
         a.Realizada,
+        a.FechaSolicitud,              -- 👈 AGREGADO
         a.FechaRealizacion,
         u.Username AS UsuarioUsername,
         u.Nombre AS UsuarioNombre,
@@ -102,7 +103,7 @@ const obtenerAsesorias = async (req, res) => {
         u.rol_id AS UsuarioRol
       FROM Asesoria a
       LEFT JOIN Usuario u ON a.UsuarioId = u.Id
-      ORDER BY a.Id DESC
+      ORDER BY a.FechaSolicitud ASC       -- 👈 CAMBIADO
     `);
 
     res.status(200).json(result.recordset);
@@ -117,23 +118,48 @@ const marcarAsesoriaRealizada = async (req, res) => {
 
   try {
     const pool = await poolPromise;
-    await pool
-      .request()
+
+    // Actualiza la asesoría
+    await pool.request()
       .input("id", sql.UniqueIdentifier, id)
       .input("Realizada", sql.Bit, 1)
-      .input("FechaRealizacion", sql.DateTime, new Date()).query(`
+      .input("FechaRealizacion", sql.DateTime, new Date())
+      .query(`
         UPDATE Asesoria
         SET Realizada = @Realizada,
             FechaRealizacion = @FechaRealizacion
         WHERE Id = @id
       `);
 
-    res.status(200).json({ message: "Asesoría marcada como realizada" });
+    // Consulta los datos del usuario para enviar correo
+    const result = await pool.request()
+      .input("id", sql.UniqueIdentifier, id)
+      .query("SELECT Nombre, Correo FROM Asesoria WHERE Id = @id");
+
+    const asesoría = result.recordset[0];
+
+    console.log("📬 Datos para correo al usuario:", asesoría); // <-- log útil
+
+    if (asesoría?.Correo) {
+      try {
+        await enviarCorreoConfirmacionRealizada(asesoría);
+        console.log("📧 Correo enviado correctamente");
+      } catch (correoError) {
+        console.error("❌ Error al enviar correo de asesoría realizada:", correoError);
+      }
+    } else {
+      console.warn("⚠️ No se encontró correo para enviar notificación");
+    }
+
+    res.status(200).json({ message: "Asesoría marcada como realizada y notificada (si fue posible)" });
+
   } catch (error) {
-    console.error("Error al actualizar asesoría:", error);
+    console.error("❌ Error al marcar asesoría como realizada:", error);
     res.status(500).json({ error: "Error al actualizar asesoría" });
   }
 };
+
+
 
 const eliminarAsesoria = async (req, res) => {
   const { id } = req.params;
@@ -173,6 +199,8 @@ const eliminarTodasAsesorias = async (req, res) => {
     res.status(500).json({ error: "Error al eliminar todas" });
   }
 };
+
+
 
 module.exports = {
   guardarAsesoria,

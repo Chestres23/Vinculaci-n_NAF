@@ -34,25 +34,30 @@ function Header() {
   );
 
   const roleSpecificLinks = {
-    1: (
-      <div className="w-full text-center mt-6">
-        <p className="text-sm font-bold text-gray-600 mb-2 uppercase">Opciones para Admin</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Link to="/dashboard-admin/ver-asesorias" className="btn-header">Ver Asesorías Solicitadas</Link>
-          <Link to="/dashboard-admin/usuarios" className="btn-header">Usuarios</Link>
-        </div>
+  1: (
+    <div className="w-full text-center mt-6">
+      <p className="text-sm font-bold text-gray-600 mb-2 uppercase">Opciones para Admin</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Link to="/dashboard-admin/ver-asesorias" className="btn-header">Ver Asesorías Solicitadas</Link>
+        <Link to="/dashboard-admin/usuarios" className="btn-header">Usuarios</Link>
+        <Link to="/dashboard-admin/boletines-manager" className="btn-header">Gestionar Boletines</Link>
+        <Link to="/dashboard-admin/libros-manager" className="btn-header">Gestionar Biblioteca</Link>
       </div>
-    ),
-    2: (
-      <div className="w-full text-center mt-6">
-        <p className="text-sm font-bold text-gray-600 mb-2 uppercase">Opciones para Editor</p>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Link to="/dashboard-editor/ver-asesorias" className="btn-header">Ver Asesorías Solicitadas</Link>
-          <Link to="/dashboard-editor/usuarios" className="btn-header">Usuarios</Link>
-        </div>
+    </div>
+  ),
+  2: (
+    <div className="w-full text-center mt-6">
+      <p className="text-sm font-bold text-gray-600 mb-2 uppercase">Opciones para Editor</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Link to="/dashboard-editor/ver-asesorias" className="btn-header">Ver Asesorías Solicitadas</Link>
+        <Link to="/dashboard-editor/usuarios" className="btn-header">Usuarios</Link>
+        <Link to="/dashboard-editor/boletines-manager" className="btn-header">Gestionar Boletines</Link>
+        <Link to="/dashboard-editor/libros-manager" className="btn-header">Gestionar Biblioteca</Link>
       </div>
-    ),
-  };
+    </div>
+  ),
+};
+
 
   // ➕ Ruta dinámica al perfil por rol
   const perfilPath =
