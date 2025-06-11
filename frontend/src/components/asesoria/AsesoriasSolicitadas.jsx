@@ -32,9 +32,12 @@ const AsesoriasSolicitadas = () => {
 
   const marcarComoRealizada = async (id) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/asesorias/marcar/${id}`, {
-        method: "PUT",
-      });
+      const res = await fetch(
+        `http://localhost:3001/api/asesorias/marcar/${id}`,
+        {
+          method: "PUT",
+        }
+      );
       if (!res.ok) throw new Error("No se pudo marcar como realizada");
 
       await fetchAsesorias();
@@ -45,61 +48,95 @@ const AsesoriasSolicitadas = () => {
   };
 
   const eliminarAsesoria = async (id) => {
-    const confirm = window.confirm("¿Estás seguro de eliminar esta asesoría?");
-    if (!confirm) return;
+  const asesoría = asesorias.find((a) => a.Id === id);
 
-    try {
-      const res = await fetch(`http://localhost:3001/api/asesorias/eliminar/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("No se pudo eliminar");
-
-      Swal.fire("✅ Eliminado", "Asesoría eliminada correctamente", "success");
-      await fetchAsesorias();
-    } catch (error) {
-      Swal.fire("❌ Error", error.message, "error");
-    }
-  };
-
-const eliminarAsesoriasRealizadas = async () => {
-  // Verificar si hay al menos una asesoría marcada como realizada
-  const realizadas = asesorias.filter((a) => a.Realizada);
-
-  if (realizadas.length === 0) {
-    return Swal.fire({
-      icon: "info",
-      title: "Sin asesorías realizadas",
-      text: "No hay asesorías marcadas como realizadas para eliminar.",
-    });
+  if (!asesoría) {
+    return Swal.fire("❌ Error", "No se pudo encontrar la asesoría", "error");
   }
 
+  const mensaje = asesoría.Realizada
+    ? "Esta asesoría ya fue marcada como realizada. ¿Deseas eliminarla?"
+    : "⚠️ Esta asesoría aún no ha sido marcada como realizada. ¿Deseas eliminarla de todos modos?";
+
   const confirmacion = await Swal.fire({
-    title: "¿Eliminar asesorías realizadas?",
-    text: `Hay ${realizadas.length} asesoría(s) realizadas. Esta acción no se puede deshacer.`,
-    icon: "warning",
+    title: "¿Eliminar asesoría?",
+    text: mensaje,
+    icon: asesoría.Realizada ? "question" : "warning",
     showCancelButton: true,
     confirmButtonText: "Sí, eliminar",
     cancelButtonText: "Cancelar",
   });
 
-  if (confirmacion.isConfirmed) {
-    try {
-      const res = await fetch("http://localhost:3001/api/asesorias/eliminar-realizadas", {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("No se pudo eliminar");
+  if (!confirmacion.isConfirmed) return;
 
-      await fetchAsesorias();
-      Swal.fire("✅ Eliminadas", "Se eliminaron las asesorías realizadas", "success");
-    } catch (error) {
-      Swal.fire("❌ Error", error.message, "error");
-    }
+  try {
+    const res = await fetch(`http://localhost:3001/api/asesorias/eliminar/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) throw new Error("No se pudo eliminar");
+
+    await fetchAsesorias();
+
+    Swal.fire("✅ Eliminado", "Asesoría eliminada correctamente", "success");
+  } catch (error) {
+    Swal.fire("❌ Error", error.message, "error");
   }
 };
 
 
-const eliminarTodasAsesorias = async () => {
+  const eliminarAsesoriasRealizadas = async () => {
+    // Verificar si hay al menos una asesoría marcada como realizada
+    const realizadas = asesorias.filter((a) => a.Realizada);
+
+    if (realizadas.length === 0) {
+      return Swal.fire({
+        icon: "info",
+        title: "Sin asesorías realizadas",
+        text: "No hay asesorías marcadas como realizadas para eliminar.",
+      });
+    }
+
+    const confirmacion = await Swal.fire({
+      title: "¿Eliminar asesorías realizadas?",
+      text: `Hay ${realizadas.length} asesoría(s) realizadas. Esta acción no se puede deshacer.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirmacion.isConfirmed) {
+      try {
+        const res = await fetch(
+          "http://localhost:3001/api/asesorias/eliminar-realizadas",
+          {
+            method: "DELETE",
+          }
+        );
+        if (!res.ok) throw new Error("No se pudo eliminar");
+
+        await fetchAsesorias();
+        Swal.fire(
+          "✅ Eliminadas",
+          "Se eliminaron las asesorías realizadas",
+          "success"
+        );
+      } catch (error) {
+        Swal.fire("❌ Error", error.message, "error");
+      }
+    }
+  };
+
+  const eliminarTodasAsesorias = async () => {
+  if (asesorias.length === 0) {
+    return Swal.fire({
+      icon: "info",
+      title: "Sin asesorías registradas",
+      text: "No hay asesorías para eliminar.",
+    });
+  }
+
   const confirmacion = await Swal.fire({
     title: "¿Eliminar TODAS las asesorías?",
     text: "Se eliminarán todas, incluso las no realizadas. Esta acción es irreversible.",
@@ -111,13 +148,20 @@ const eliminarTodasAsesorias = async () => {
 
   if (confirmacion.isConfirmed) {
     try {
-      const res = await fetch("http://localhost:3001/api/asesorias/eliminar-todas", {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        "http://localhost:3001/api/asesorias/eliminar-todas",
+        {
+          method: "DELETE",
+        }
+      );
       if (!res.ok) throw new Error("No se pudo eliminar");
 
       await fetchAsesorias();
-      Swal.fire("✅ Eliminadas", "Todas las asesorías han sido eliminadas", "success");
+      Swal.fire(
+        "✅ Eliminadas",
+        "Todas las asesorías han sido eliminadas",
+        "success"
+      );
     } catch (error) {
       Swal.fire("❌ Error", error.message, "error");
     }
@@ -143,24 +187,24 @@ const eliminarTodasAsesorias = async () => {
         className="bg-white bg-opacity-95 rounded-3xl shadow-2xl p-10 max-w-7xl mx-auto"
       >
         <h2 className="text-4xl font-bold text-green-900 mb-6 text-center">
-          Asesorías Recibidas
+          Asesorías Solicitadas
         </h2>
 
         <div className="overflow-x-auto">
           <div className="mb-4 flex gap-4 justify-end">
-  <button
-    onClick={eliminarAsesoriasRealizadas}
-    className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded"
-  >
-    🗑️ Eliminar realizadas
-  </button>
-  <button
-    onClick={eliminarTodasAsesorias}
-    className="bg-red-700 hover:bg-red-800 text-white font-semibold py-2 px-4 rounded"
-  >
-    ❌ Eliminar todas
-  </button>
-</div>
+            <button
+              onClick={eliminarAsesoriasRealizadas}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded"
+            >
+              🗑️ Eliminar realizadas
+            </button>
+            <button
+              onClick={eliminarTodasAsesorias}
+              className="bg-red-700 hover:bg-red-800 text-white font-semibold py-2 px-4 rounded"
+            >
+              ❌ Eliminar todas
+            </button>
+          </div>
 
           <table className="w-full border-collapse table-auto">
             <thead>
@@ -204,25 +248,24 @@ const eliminarTodasAsesorias = async () => {
                     </td>
 
                     <td className="p-3">
-  <button
-    onClick={() => marcarComoRealizada(item.Id)}
-    disabled={item.Realizada}
-    className={`mr-2 ${
-      item.Realizada
-        ? "bg-gray-400 cursor-not-allowed"
-        : "bg-green-700 hover:bg-green-800"
-    } text-white px-2 py-1 rounded text-sm`}
-  >
-    {item.Realizada ? "Realizada" : "Marcar como realizada"}
-  </button>
-  <button
-    onClick={() => eliminarAsesoria(item.Id)}
-    className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm"
-  >
-    Eliminar
-  </button>
-</td>
-
+                      <button
+                        onClick={() => marcarComoRealizada(item.Id)}
+                        disabled={item.Realizada}
+                        className={`mr-2 ${
+                          item.Realizada
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-green-700 hover:bg-green-800"
+                        } text-white px-2 py-1 rounded text-sm`}
+                      >
+                        {item.Realizada ? "Realizada" : "Marcar como realizada"}
+                      </button>
+                      <button
+                        onClick={() => eliminarAsesoria(item.Id)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-sm"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
