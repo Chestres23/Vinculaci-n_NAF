@@ -7,6 +7,7 @@ import {
 import { auth } from "../../config/firebaseConfig";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import Swal from "sweetalert2";
 
 const Register = () => {
   const { login } = useAuth();
@@ -35,60 +36,97 @@ const Register = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    try {
-      // 1. Crear en Firebase
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.correo,
-        formData.password
-      );
-      const uid = userCredential.user.uid;
+  let firebaseUser = null;
 
-      // 2. Cerrar sesión para evitar onAuthStateChanged prematuro
-      await signOut(auth);
+  try {
+    // 🌀 Mostrar alerta de carga
+    Swal.fire({
+      title: "Registrando usuario...",
+      text: "Por favor, espera un momento",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
-      // 3. Guardar en el backend
-      const response = await fetch("http://localhost:3001/api/users/create-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, uid }),
-      });
+    // 1. Crear en Firebase
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      formData.correo,
+      formData.password
+    );
+    firebaseUser = userCredential.user;
 
-      if (!response.ok) {
-        const msg = await response.text();
-        throw new Error(msg);
+    const uid = firebaseUser.uid;
+
+    // 2. Cerrar sesión para evitar onAuthStateChanged prematuro
+    await signOut(auth);
+
+    // 3. Guardar en el backend
+    const response = await fetch("http://localhost:3001/api/users/create-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...formData, uid }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      // ⚠️ BORRAR de Firebase si el backend falla
+      try {
+        await firebaseUser.delete();
+        console.warn("🧹 Usuario de Firebase eliminado por error en backend");
+      } catch (deleteError) {
+        console.error("❌ Error al eliminar usuario de Firebase:", deleteError);
       }
 
-      // 4. Volver a logear
-      const result = await signInWithEmailAndPassword(
-        auth,
-        formData.correo,
-        formData.password
-      );
-
-      login(result.user); // activa el contexto
-
-      // 5. Redirigir según rol
-      switch (formData.rol_id) {
-        case 1:
-          navigate("/dashboard-admin/inicio");
-          break;
-        case 2:
-          navigate("/dashboard-editor/inicio");
-          break;
-        case 3:
-        default:
-          navigate("/dashboard-usuario/inicio");
-          break;
-      }
-    } catch (err) {
-      console.error("❌ Error en registro:", err);
-      setError(err.message || "Error al registrar.");
+      throw new Error(result.error || "Error al guardar en la base de datos");
     }
-  };
+
+    // 4. Volver a logear
+    const resLogin = await signInWithEmailAndPassword(
+      auth,
+      formData.correo,
+      formData.password
+    );
+
+    login(resLogin.user); // activa el contexto
+
+    // ✅ Mostrar confirmación
+    Swal.fire({
+      icon: "success",
+      title: "Usuario registrado",
+      text: "Tu cuenta se ha creado correctamente.",
+    });
+
+    // 5. Redirigir según rol
+    switch (formData.rol_id) {
+      case 1:
+        navigate("/dashboard-admin/inicio");
+        break;
+      case 2:
+        navigate("/dashboard-editor/inicio");
+        break;
+      case 3:
+      default:
+        navigate("/dashboard-usuario/inicio");
+        break;
+    }
+  } catch (err) {
+    console.error("❌ Error en registro:", err);
+    Swal.fire({
+      icon: "error",
+      title: "Registro fallido",
+      text: err.message || "Ocurrió un error durante el registro",
+    });
+    setError(err.message);
+  }
+};
+
+
 
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6 bg-white shadow rounded">

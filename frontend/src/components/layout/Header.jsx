@@ -4,8 +4,7 @@ import logo from "../../assets/images/escudo.png";
 import nafLogo from "../../assets/images/naf.jpg";
 import { FiMenu, FiX } from 'react-icons/fi';
 import React, { useState } from 'react';
-
-
+import "../../assets/styles/Header.css"; // Asegúrate de tener este CSS
 
 function Header() {
   const { user, rol, userData, handleLogout } = useAuth();
@@ -14,40 +13,82 @@ function Header() {
   const isDashboard = location.pathname.startsWith("/dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
-
-  const closeMenu = () => {
-    setMenuOpen(false);
-  };
-
+  const toggleMenu = () => setMenuOpen(!menuOpen);
+  const closeMenu = () => setMenuOpen(false);
   const handleSignOut = async () => {
-  await handleLogout();
-  window.location.href = "/"; // ⬅️ REDIRECCIÓN DURA
-};
+    await handleLogout();
+    window.location.href = "/";
+  };
 
+  const commonLinks = (basePath) => (
+    <>
+      <Link to={`${basePath}/inicio`}>Inicio</Link>
+      <Link to={`${basePath}/quienes`}>¿Quiénes Somos?</Link>
+      <Link to={`${basePath}/servicios`}>Solicitar Asesoría</Link>
+      <Link to={`${basePath}/biblioteca`}>Biblioteca</Link>
+      <Link to={`${basePath}/boletines`}>Boletines Contables</Link>
+      <Link to={`${basePath}/naf`}>NAF</Link>
+      <Link to={`${basePath}/galeria`}>Galería</Link>
+    </>
+  );
+
+  const roleSpecificLinks = {
+    1: (
+      <div className="w-full text-center mt-6">
+        <p className="text-sm font-bold text-gray-600 mb-2 uppercase">Opciones para Admin</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Link to="/dashboard-admin/ver-asesorias" className="btn-header">Ver Asesorías Solicitadas</Link>
+          <Link to="/dashboard-admin/usuarios" className="btn-header">Usuarios</Link>
+        </div>
+      </div>
+    ),
+    2: (
+      <div className="w-full text-center mt-6">
+        <p className="text-sm font-bold text-gray-600 mb-2 uppercase">Opciones para Editor</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Link to="/dashboard-editor/ver-asesorias" className="btn-header">Ver Asesorías Solicitadas</Link>
+          <Link to="/dashboard-editor/usuarios" className="btn-header">Usuarios</Link>
+        </div>
+      </div>
+    ),
+  };
 
   return (
     <header className="header">
-      <div className="header-top">
+      <div className="header-top relative flex justify-between items-center">
         <img src={logo} alt="Escudo" className="logo logo-left" />
         <h1 className="title">NÚCLEO DE APOYO CONTABLE Y FISCAL - ESPE</h1>
+
+        {/* 🔒 Botones de sesión reposicionados */}
+        <div className="logo-actions absolute top-full right-4 mt-2 flex flex-col items-end">
+          {!user ? (
+            <div className="flex flex-col gap-1">
+              <Link to="/login" className="btn-login">Iniciar Sesión</Link>
+              <Link to="/register" className="btn-register">Registrarse</Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1 text-right">
+              <span className="text-sm font-semibold text-green-900">
+                {userData?.nombre} ({rol === 1 ? "Admin" : rol === 2 ? "Editor" : "Usuario"})
+              </span>
+              <button onClick={handleSignOut} className="btn-logout">Cerrar Sesión</button>
+            </div>
+          )}
+        </div>
+
         <img src={nafLogo} alt="NAF Logo" className="logo logo-right" />
       </div>
 
-      {/* Botón hamburguesa visible solo en móvil */}
       <div className="menu-toggle" onClick={toggleMenu}>
         {menuOpen ? <FiX size={30} /> : <FiMenu size={30} />}
       </div>
 
       <nav className="navbar navbar-expand text-green-900 bg-white flex-wrap gap-4 p-4">
-        {/* 🔓 ZONA PÚBLICA */}
         {!isDashboard && (
           <>
             <Link to="/">Inicio</Link>
             <Link to="/quienes">¿Quiénes Somos?</Link>
-            <Link to="/servicios">Servicios</Link>
+            <Link to="/servicios">Solicitar Asesoría</Link>
             <Link to="/biblioteca">Biblioteca</Link>
             <Link to="/boletines">Boletines Contables</Link>
             <Link to="/naf">NAF</Link>
@@ -55,75 +96,27 @@ function Header() {
           </>
         )}
 
-        {/* 🔐 ZONA PRIVADA POR ROL */}
         {isDashboard && user && (
           <>
             {rol === 1 && (
               <>
-                <Link to="/dashboard-admin/inicio">Inicio</Link>
-                <Link to="/dashboard-admin/quienes">¿Quiénes Somos?</Link>
-                <Link to="/dashboard-admin/servicios">Servicios</Link>
-                <Link to="/dashboard-admin/ver-asesorias">Ver Asesorias Recibidas</Link>
-                <Link to="/dashboard-admin/biblioteca">Biblioteca</Link>
-                <Link to="/dashboard-admin/boletines">Boletines Contables</Link>             
-                <Link to="/dashboard-admin/naf">NAF</Link>
-                <Link to="/dashboard-admin/galeria">Galería</Link>
-                <Link to="/dashboard-admin/usuarios">Usuarios</Link>
+                {commonLinks("/dashboard-admin")}
+                {roleSpecificLinks[1]}
               </>
             )}
             {rol === 2 && (
               <>
-                <Link to="/dashboard-editor/inicio">Inicio</Link>
-                <Link to="/dashboard-editor/quienes">¿Quiénes Somos?</Link>
-                <Link to="/dashboard-editor/servicios">Servicios</Link>
-                <Link to="/dashboard-editor/ver-asesorias">Ver Asesorias Recibidas</Link>
-                <Link to="/dashboard-editor/biblioteca">Biblioteca</Link>
-                <Link to="/dashboard-editor/boletines">Boletines Contables</Link>             
-                <Link to="/dashboard-editor/naf">NAF</Link>
-                <Link to="/dashboard-editor/galeria">Galería</Link>
-                <Link to="/dashboard-editor/usuarios">Usuarios</Link>
+                {commonLinks("/dashboard-editor")}
+                {roleSpecificLinks[2]}
               </>
             )}
             {rol === 3 && (
               <>
-                <Link to="/dashboard-usuario/inicio">Inicio</Link>
-                <Link to="/dashboard-usuario/quienes">¿Quiénes Somos?</Link>
-                <Link to="/dashboard-usuario/servicios">Servicios</Link>
-                <Link to="/dashboard-usuario/biblioteca">Biblioteca</Link>
-                <Link to="/dashboard-usuario/boletines">Boletines Contables</Link>             
-                <Link to="/dashboard-usuario/naf">NAF</Link>
-                <Link to="/dashboard-usuario/galeria">Galería</Link>
+                {commonLinks("/dashboard-usuario")}
               </>
             )}
           </>
         )}
-
-        {/* 🔘 Controles de sesión */}
-        <div className="ml-auto flex items-center space-x-4">
-          {!user ? (
-            <>
-              <Link
-                to="/login"
-                className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Iniciar Sesión
-              </Link>
-              <Link to="/register">Registrarse</Link>
-            </>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-semibold text-green-900">
-                {userData?.nombre} ({rol})
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-500"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          )}
-        </div>
       </nav>
     </header>
   );

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Swal from "sweetalert2";
 import fondo6 from "../../assets/images/fondo6.jpg";
 
-const AsesoriasRecibidas = () => {
+const AsesoriasSolicitadas = () => {
   const [asesorias, setAsesorias] = useState([]);
 
   const fetchAsesorias = async () => {
@@ -240,4 +240,4 @@ const eliminarTodasAsesorias = async () => {
   );
 };
 
-export default AsesoriasRecibidas;
+export default AsesoriasSolicitadas;

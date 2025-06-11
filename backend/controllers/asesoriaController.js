@@ -1,4 +1,5 @@
-const { sql, poolPromise } = require('../db');
+const { sql, poolPromise } = require("../db");
+const { enviarCorreoAsesoria } = require("../utils/emailSender");
 
 const guardarAsesoria = async (req, res) => {
   const {
@@ -12,12 +13,15 @@ const guardarAsesoria = async (req, res) => {
     TipoContribuyente,
     Discapacidad,
     MedioContacto,
-    DetalleSolicitud
+    DetalleSolicitud,
   } = req.body;
 
   try {
     const pool = await poolPromise;
-    await pool.request()
+
+    // Insertar asesoría y obtener el ID generado
+    const insertResult = await pool
+      .request()
       .input("UsuarioId", sql.UniqueIdentifier, UsuarioId || null)
       .input("Nombre", sql.NVarChar, Nombre)
       .input("CedulaRUC", sql.NVarChar, CedulaRUC)
@@ -26,28 +30,45 @@ const guardarAsesoria = async (req, res) => {
       .input("Ciudad", sql.NVarChar, Ciudad)
       .input("TipoServicio", sql.NVarChar, TipoServicio)
       .input("TipoContribuyente", sql.NVarChar, TipoContribuyente)
-      .input("Discapacidad", sql.Bit, Discapacidad === 'si' ? 1 : 0)
+      .input("Discapacidad", sql.Bit, Discapacidad === "si" ? 1 : 0)
       .input("MedioContacto", sql.NVarChar, MedioContacto)
       .input("DetalleSolicitud", sql.Text, DetalleSolicitud)
       .input("Realizada", sql.Bit, 0)
       .input("FechaRealizacion", sql.DateTime, null)
       .query(`
+        DECLARE @newId UNIQUEIDENTIFIER = NEWID();
         INSERT INTO Asesoria (
-          UsuarioId, Nombre, CedulaRUC, Correo, Telefono, Ciudad,
+          Id, UsuarioId, Nombre, CedulaRUC, Correo, Telefono, Ciudad,
           TipoServicio, TipoContribuyente, Discapacidad, MedioContacto,
           DetalleSolicitud, Realizada, FechaRealizacion
         )
         VALUES (
-          @UsuarioId, @Nombre, @CedulaRUC, @Correo, @Telefono, @Ciudad,
+          @newId, @UsuarioId, @Nombre, @CedulaRUC, @Correo, @Telefono, @Ciudad,
           @TipoServicio, @TipoContribuyente, @Discapacidad, @MedioContacto,
           @DetalleSolicitud, @Realizada, @FechaRealizacion
-        )
-
+        );
+        SELECT @newId AS Id;
       `);
 
-    res.status(201).json({ message: "Asesoría registrada correctamente" });
+    const nuevaAsesoriaId = insertResult.recordset[0].Id;
+
+    try {
+      await enviarCorreoAsesoria(req.body);
+      res.status(201).json({ message: "Asesoría registrada correctamente" });
+    } catch (correoError) {
+      // Si falla el correo, elimina la asesoría recién creada
+      await pool
+        .request()
+        .input("Id", sql.UniqueIdentifier, nuevaAsesoriaId)
+        .query("DELETE FROM Asesoria WHERE Id = @Id");
+
+      console.error("❌ Error al enviar correo, asesoría eliminada:", correoError);
+      res.status(500).json({
+        error: "Error al enviar correo. La asesoría fue descartada.",
+      });
+    }
   } catch (error) {
-    console.error("Error al guardar asesoría:", error);
+    console.error("❌ Error al guardar asesoría:", error);
     res.status(500).json({ error: "Error al guardar asesoría" });
   }
 };
@@ -86,22 +107,21 @@ const obtenerAsesorias = async (req, res) => {
 
     res.status(200).json(result.recordset);
   } catch (error) {
-    console.error('❌ Error al obtener asesorías:', error);
-    res.status(500).json({ mensaje: 'Error al obtener las asesorías' });
+    console.error("❌ Error al obtener asesorías:", error);
+    res.status(500).json({ mensaje: "Error al obtener las asesorías" });
   }
 };
-
 
 const marcarAsesoriaRealizada = async (req, res) => {
   const { id } = req.params;
 
   try {
     const pool = await poolPromise;
-    await pool.request()
+    await pool
+      .request()
       .input("id", sql.UniqueIdentifier, id)
       .input("Realizada", sql.Bit, 1)
-      .input("FechaRealizacion", sql.DateTime, new Date())
-      .query(`
+      .input("FechaRealizacion", sql.DateTime, new Date()).query(`
         UPDATE Asesoria
         SET Realizada = @Realizada,
             FechaRealizacion = @FechaRealizacion
@@ -119,7 +139,8 @@ const eliminarAsesoria = async (req, res) => {
   const { id } = req.params;
   try {
     const pool = await poolPromise;
-    await pool.request()
+    await pool
+      .request()
       .input("id", sql.UniqueIdentifier, id)
       .query("DELETE FROM Asesoria WHERE Id = @id");
 
@@ -133,8 +154,7 @@ const eliminarAsesoria = async (req, res) => {
 const eliminarAsesoriasRealizadas = async (req, res) => {
   try {
     const pool = await poolPromise;
-    await pool.request()
-      .query(`DELETE FROM Asesoria WHERE Realizada = 1`);
+    await pool.request().query(`DELETE FROM Asesoria WHERE Realizada = 1`);
 
     res.status(200).json({ message: "Asesorías realizadas eliminadas" });
   } catch (error) {
@@ -154,6 +174,11 @@ const eliminarTodasAsesorias = async (req, res) => {
   }
 };
 
-
-
-module.exports = { guardarAsesoria, obtenerAsesorias, marcarAsesoriaRealizada, eliminarAsesoria, eliminarAsesoriasRealizadas, eliminarTodasAsesorias };
+module.exports = {
+  guardarAsesoria,
+  obtenerAsesorias,
+  marcarAsesoriaRealizada,
+  eliminarAsesoria,
+  eliminarAsesoriasRealizadas,
+  eliminarTodasAsesorias,
+};

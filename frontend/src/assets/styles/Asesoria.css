@@ -1,0 +1,24 @@
+/* src/assets/styles/Asesoria.css */
+
+@keyframes highlight {
+  0% {
+    box-shadow: 0 0 0px rgba(34, 197, 94, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0px rgba(34, 197, 94, 0.2);
+  }
+}
+
+.highlight {
+  animation: highlight 1s ease-in-out 2;
+  border: 2px solid #22c55e; /* Tailwind green-500 */
+  border-radius: 0.75rem;
+}
+
+.input-vacio {
+  border: 2px solid #e74c3c !important;
+  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}

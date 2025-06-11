@@ -50,8 +50,6 @@ const capitalize = (str) => {
 
 // Crear usuario nuevo
 const createUser = async (req, res) => {
-  console.log("📥 Datos recibidos del frontend:", req.body); // 🔍 VERIFICACIÓN
-
   const {
     uid,
     nombre,
@@ -70,19 +68,14 @@ const createUser = async (req, res) => {
   try {
     const pool = await poolPromise;
 
-    console.log("🔍 Verificando si el correo ya existe...");
-
     const exists = await pool
       .request()
       .input("correo", sql.NVarChar, correo)
       .query("SELECT 1 FROM Usuario WHERE Correo = @correo");
 
     if (exists.recordset.length > 0) {
-      console.warn("⚠️ Correo ya existente:", correo);
       return res.status(400).json({ error: "El correo ya existe en la base de datos" });
     }
-
-    console.log("✅ Insertando nuevo usuario...");
 
     await pool
       .request()
@@ -110,19 +103,31 @@ const createUser = async (req, res) => {
         )
       `);
 
-    console.log("✅ Usuario insertado correctamente");
     res.status(201).json({ message: "Usuario registrado en la base de datos" });
 
   } catch (error) {
     console.error("❌ Error al guardar usuario:", error);
+
+    // 🔁 Intentar limpiar si se insertó algo
+    if (uid) {
+      try {
+        const pool = await poolPromise;
+        await pool.request()
+          .input("FirebaseUid", sql.NVarChar, uid)
+          .query("DELETE FROM Usuario WHERE FirebaseUid = @FirebaseUid");
+        console.warn("🧹 Usuario eliminado de la base por error posterior");
+      } catch (deleteError) {
+        console.error("❌ No se pudo limpiar usuario de base:", deleteError);
+      }
+    }
+
     res.status(500).json({ error: "Error del servidor", detalle: error.message });
   }
 };
 
+
 // Crear usuario con admin
 const createUserAdmin = async (req, res) => {
-  console.log("📥 Datos recibidos del frontend:", req.body);
-
   const {
     nombre,
     segundoNombre,
@@ -135,44 +140,36 @@ const createUserAdmin = async (req, res) => {
     tipoContribuyente,
     username,
     rol_id,
-    password, // ⚠️ Asegúrate de que venga del formulario
+    password,
   } = req.body;
+
+  let uidCreado = null;
 
   try {
     const pool = await poolPromise;
 
-    console.log("🔍 Verificando si el correo ya existe...");
     const exists = await pool
       .request()
       .input("correo", sql.NVarChar, correo)
       .query("SELECT 1 FROM Usuario WHERE Correo = @correo");
 
     if (exists.recordset.length > 0) {
-      console.warn("⚠️ Correo ya existente:", correo);
       return res.status(400).json({ error: "El correo ya existe en la base de datos" });
     }
 
-    // 1️⃣ Crear usuario en Firebase
-    let firebaseUser;
-    try {
-      firebaseUser = await admin.auth().createUser({
-        email: correo,
-        password,
-        displayName: `${capitalize(nombre)} ${capitalize(apellido)}`,
-      });
-    } catch (firebaseError) {
-      console.error("❌ Error al crear usuario en Firebase:", firebaseError);
-      return res.status(500).json({ error: "Error al crear usuario en Firebase", detalle: firebaseError.message });
-    }
+    // 🔐 Crear en Firebase
+    const firebaseUser = await admin.auth().createUser({
+      email: correo,
+      password,
+      displayName: `${capitalize(nombre)} ${capitalize(apellido)}`,
+    });
 
-    const uid = firebaseUser.uid;
+    uidCreado = firebaseUser.uid;
 
-    // 2️⃣ Insertar en base de datos
-    console.log("✅ Insertando nuevo usuario en base de datos...");
-
+    // 📥 Insertar en base de datos
     await pool
       .request()
-      .input("FirebaseUid", sql.NVarChar, uid)
+      .input("FirebaseUid", sql.NVarChar, uidCreado)
       .input("Nombre", sql.NVarChar, capitalize(nombre))
       .input("SegundoNombre", sql.NVarChar, capitalize(segundoNombre))
       .input("Apellido", sql.NVarChar, capitalize(apellido))
@@ -196,10 +193,32 @@ const createUserAdmin = async (req, res) => {
         )
       `);
 
-    console.log("✅ Usuario registrado exitosamente");
-    res.status(201).json({ message: "Usuario registrado correctamente", uid });
+    res.status(201).json({ message: "Usuario registrado correctamente", uid: uidCreado });
+
   } catch (error) {
     console.error("❌ Error al guardar usuario:", error);
+
+    // 🧹 Borrar de la base
+    if (uidCreado) {
+      try {
+        const pool = await poolPromise;
+        await pool.request()
+          .input("FirebaseUid", sql.NVarChar, uidCreado)
+          .query("DELETE FROM Usuario WHERE FirebaseUid = @FirebaseUid");
+        console.warn("🧹 Usuario eliminado de la base tras error");
+      } catch (dbCleanError) {
+        console.error("❌ Error al eliminar de base:", dbCleanError);
+      }
+
+      // 🧹 Borrar de Firebase
+      try {
+        await admin.auth().deleteUser(uidCreado);
+        console.warn("🧹 Usuario eliminado de Firebase tras error");
+      } catch (fbCleanError) {
+        console.error("❌ Error al eliminar de Firebase:", fbCleanError);
+      }
+    }
+
     res.status(500).json({ error: "Error del servidor", detalle: error.message });
   }
 };
@@ -263,14 +282,14 @@ const getUsers = async (req, res) => {
 };
 
 // Actualizar usuario
+// Actualizar usuario
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const {
-  nombre, segundoNombre, apellido, segundoApellido,
-  correo, telefono, ciudad, tipoContribuyente, rol_id,
-  cedulaRUC
-} = req.body;
-
+    nombre, segundoNombre, apellido, segundoApellido,
+    correo, telefono, ciudad, tipoContribuyente, rol_id,
+    cedulaRUC, username
+  } = req.body;
 
   try {
     const pool = await poolPromise;
@@ -278,51 +297,65 @@ const updateUser = async (req, res) => {
     // 🔍 Obtener el UID de Firebase desde la base de datos
     const uidResult = await pool.request()
       .input("id", sql.UniqueIdentifier, id)
-      .query('SELECT FirebaseUid FROM Usuario WHERE id = @id');
+      .query("SELECT FirebaseUid FROM Usuario WHERE id = @id");
 
     if (uidResult.recordset.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado en la base de datos' });
+      return res.status(404).json({ error: "Usuario no encontrado en la base de datos" });
     }
 
     const firebaseUid = uidResult.recordset[0].FirebaseUid;
+
+    // 🚫 Verificar si ya existe otro usuario con el mismo username
+    const usernameExists = await pool.request()
+      .input("username", sql.NVarChar, username)
+      .input("id", sql.UniqueIdentifier, id)
+      .query("SELECT 1 FROM Usuario WHERE Username = @username AND id != @id");
+
+    if (usernameExists.recordset.length > 0) {
+      return res.status(400).json({ error: "El nombre de usuario ya está en uso por otro usuario" });
+    }
 
     // 🔁 Actualizar el correo en Firebase Authentication
     try {
       await admin.auth().updateUser(firebaseUid, { email: correo });
     } catch (firebaseError) {
       console.error("❌ Error al actualizar correo en Firebase:", firebaseError);
-      return res.status(500).json({ error: 'No se pudo actualizar el correo en Firebase' });
+      return res.status(500).json({ error: "No se pudo actualizar el correo en Firebase" });
     }
 
     // ✅ Actualizar en la base de datos
     await pool.request()
       .input("id", sql.UniqueIdentifier, id)
-      .input('Nombre', sql.NVarChar, capitalize(nombre))
-      .input('SegundoNombre', sql.NVarChar, capitalize(segundoNombre))
-      .input('Apellido', sql.NVarChar, capitalize(apellido))
-      .input('SegundoApellido', sql.NVarChar, capitalize(segundoApellido))
-      .input('Correo', sql.NVarChar, correo)
-      .input('Telefono', sql.NVarChar, telefono)
-      .input('CedulaRUC', sql.NVarChar, cedulaRUC)
-      .input('Ciudad', sql.NVarChar, ciudad)
-      .input('TipoContribuyente', sql.NVarChar, tipoContribuyente)
-      .input('Rol_id', sql.Int, rol_id)
+      .input("Nombre", sql.NVarChar, capitalize(nombre))
+      .input("SegundoNombre", sql.NVarChar, capitalize(segundoNombre))
+      .input("Apellido", sql.NVarChar, capitalize(apellido))
+      .input("SegundoApellido", sql.NVarChar, capitalize(segundoApellido))
+      .input("Correo", sql.NVarChar, correo)
+      .input("Telefono", sql.NVarChar, telefono)
+      .input("CedulaRUC", sql.NVarChar, cedulaRUC)
+      .input("Ciudad", sql.NVarChar, ciudad)
+      .input("TipoContribuyente", sql.NVarChar, tipoContribuyente)
+      .input("Rol_id", sql.Int, rol_id)
+      .input("Username", sql.NVarChar, username)
       .query(`
         UPDATE Usuario SET
           Nombre = @Nombre, SegundoNombre = @SegundoNombre,
           Apellido = @Apellido, SegundoApellido = @SegundoApellido,
           Correo = @Correo, CedulaRUC = @CedulaRUC,
           Telefono = @Telefono, Ciudad = @Ciudad,
-          TipoContribuyente = @TipoContribuyente, Rol_id = @Rol_id
+          TipoContribuyente = @TipoContribuyente,
+          Rol_id = @Rol_id, Username = @Username
         WHERE id = @id
       `);
 
-    res.json({ message: 'Usuario actualizado correctamente' });
+    res.json({ message: "Usuario actualizado correctamente" });
+
   } catch (error) {
-    console.error("Error al actualizar usuario:", error);
-    res.status(500).json({ error: 'Error del servidor' });
+    console.error("❌ Error al actualizar usuario:", error);
+    res.status(500).json({ error: "Error del servidor" });
   }
 };
+
 
 
 // Eliminar usuario

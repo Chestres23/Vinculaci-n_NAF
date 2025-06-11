@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import fondo from "../../assets/images/fondo2.jpg";
+import Swal from "sweetalert2";
 
 const EditarUsuario = () => {
-  const { uid } = useParams();  // uid de Firebase desde la URL
+  const { uid } = useParams(); // uid de Firebase desde la URL
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -38,7 +39,7 @@ const EditarUsuario = () => {
           telefono: data.Telefono,
           ciudad: data.Ciudad,
           tipoContribuyente: data.TipoContribuyente,
-          rol_id: data.rol_id,  // ✅ case-sensitive corregido
+          rol_id: data.rol_id, // ✅ case-sensitive corregido
           username: data.Username,
         });
         setUserId(data.Id); // ← lo que necesitas para PUT
@@ -51,37 +52,42 @@ const EditarUsuario = () => {
     fetchUsuario();
   }, [uid]);
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-    const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!userId) {
-      alert("Error: ID del usuario no disponible");
-      return;
+  if (!userId) {
+    Swal.fire("❌ Error", "ID del usuario no disponible", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await res.json(); // ✅ leer contenido del backend
+
+    if (!res.ok) {
+      throw new Error(result.error || "Error desconocido al actualizar el usuario");
     }
 
-    try {
-      console.log("Enviando a backend:", formData);
-      const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error("Error al actualizar el usuario");
-
-      alert("Usuario actualizado correctamente ✅");
+    Swal.fire("✅ Éxito", "Usuario actualizado correctamente", "success").then(() => {
       navigate("/dashboard-admin/usuarios");
-    } catch (error) {
-      console.error("Error al actualizar:", error);
-      alert("No se pudo actualizar el usuario");
-    }
-  };
+    });
+  } catch (error) {
+    console.error("❌ Error al actualizar:", error);
+    Swal.fire("❌ Error", error.message, "error");
+  }
+};
+
+
 
 
   return (
@@ -181,11 +187,15 @@ const EditarUsuario = () => {
               className="input"
             >
               <option value="">Tipo de Contribuyente</option>
-              <option value="natural_no_conta">Natural NO contable</option>
-              <option value="natural_conta">Natural contable</option>
-              <option value="juridica">Jurídica</option>
-              <option value="sociedad">Sociedad</option>
-              <option value="otro">Otro</option>
+              <option value="Persona natural no obligada a llevar contabilidad">
+                Persona natural no obligada
+              </option>
+              <option value="Persona natural obligada a llevar contabilidad">
+                Persona natural obligada
+              </option>
+              <option value="Persona jurídica">Persona jurídica</option>
+              <option value="Sociedad">Sociedad</option>
+              <option value="Otro">Otro</option>
             </select>
 
             <select

@@ -11,7 +11,7 @@ import DashboardPublic from "../components/dashboard/DashboardPublic";
 
 // Componentes públicos
 import MainContent from "../components/layout/MainContent";
-import Servicios from "../components/buttons/Servicios";
+import Servicios from "../components/asesoria/SolicitarAsesoria";
 import NAF from "../components/buttons/NAF";
 import Biblioteca from "../components/buttons/Biblioteca";
 import Boletines from "../components/buttons/Boletines";
@@ -42,22 +42,89 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* 🌐 RUTAS PÚBLICAS */}
-      <Route path="/" element={redirectIfLoggedIn(<DashboardPublic><MainContent /></DashboardPublic>)} />
-      <Route path="/quienes" element={redirectIfLoggedIn(<DashboardPublic><Quienes /></DashboardPublic>)} />
-      <Route path="/naf" element={redirectIfLoggedIn(<DashboardPublic><NAF /></DashboardPublic>)} />
-      <Route path="/galeria" element={redirectIfLoggedIn(<DashboardPublic><Galeria /></DashboardPublic>)} />
-      <Route path="/boletines" element={redirectIfLoggedIn(<DashboardPublic><Boletines /></DashboardPublic>)} />
-      <Route path="/biblioteca" element={redirectIfLoggedIn(<DashboardPublic><Biblioteca /></DashboardPublic>)} />
-      <Route path="/servicios" element={redirectIfLoggedIn(<DashboardPublic><Servicios /></DashboardPublic>)} />
+      <Route
+        path="/"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <MainContent />
+          </DashboardPublic>
+        )}
+      />
+      <Route
+        path="/quienes"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <Quienes />
+          </DashboardPublic>
+        )}
+      />
+      <Route
+        path="/naf"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <NAF />
+          </DashboardPublic>
+        )}
+      />
+      <Route
+        path="/galeria"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <Galeria />
+          </DashboardPublic>
+        )}
+      />
+      <Route
+        path="/boletines"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <Boletines />
+          </DashboardPublic>
+        )}
+      />
+      <Route
+        path="/biblioteca"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <Biblioteca />
+          </DashboardPublic>
+        )}
+      />
+      <Route
+        path="/servicios"
+        element={redirectIfLoggedIn(
+          <DashboardPublic>
+            <Servicios />
+          </DashboardPublic>
+        )}
+      />
 
       {/* 🔐 LOGIN / REGISTRO */}
       <Route path="/login" element={<PublicOnlyRoute element={<Login />} />} />
-      <Route path="/register" element={<PublicOnlyRoute element={<Register />} />} />
+      <Route
+        path="/register"
+        element={<PublicOnlyRoute element={<Register />} />}
+      />
 
       {/* 🔒 DASHBOARDS PROTEGIDOS */}
-      <Route path="/dashboard-admin/*" element={<ProtectedRoute requiredRole={1} element={<DashboardAdmin />} />} />
-      <Route path="/dashboard-editor/*" element={<ProtectedRoute requiredRole={2} element={<DashboardEditor />} />} />
-      <Route path="/dashboard-usuario/*" element={<ProtectedRoute requiredRole={3} element={<DashboardUsuario />} />} />
+      <Route
+        path="/dashboard-admin/*"
+        element={
+          <ProtectedRoute requiredRole={1} element={<DashboardAdmin />} />
+        }
+      />
+      <Route
+        path="/dashboard-editor/*"
+        element={
+          <ProtectedRoute requiredRole={2} element={<DashboardEditor />} />
+        }
+      />
+      <Route
+        path="/dashboard-usuario/*"
+        element={
+          <ProtectedRoute requiredRole={3} element={<DashboardUsuario />} />
+        }
+      />
 
       {/* 🚫 CUALQUIER RUTA DESCONOCIDA */}
       <Route path="*" element={<Navigate to="/" />} />

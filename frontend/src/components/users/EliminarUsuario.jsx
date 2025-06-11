@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const EliminarUsuario = () => {
-  const { uid } = useParams(); // ⚠️ cambia de "id" a "uid"
+  const { uid } = useParams();
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
-  const [userId, setUserId] = useState(null); // ID real GUID
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const fetchUsuario = async () => {
@@ -13,9 +14,10 @@ const EliminarUsuario = () => {
         const response = await fetch(`http://localhost:3001/api/users/${uid}`);
         const data = await response.json();
         setUsuario(data);
-        setUserId(data.Id || data.id); // asegúrate de capturar el GUID real
+        setUserId(data.Id || data.id);
       } catch (error) {
         console.error("Error al obtener usuario:", error);
+        Swal.fire("❌ Error", "No se pudo obtener el usuario", "error");
       }
     };
 
@@ -23,15 +25,30 @@ const EliminarUsuario = () => {
   }, [uid]);
 
   const handleDelete = async () => {
-    try {
-      await fetch(`http://localhost:3001/api/users/${userId}`, {
-        method: "DELETE",
-      });
-      alert("Usuario eliminado correctamente ✅");
-      navigate("/dashboard-admin/usuarios");
-    } catch (error) {
-      console.error("Error al eliminar usuario:", error);
-      alert("Error al eliminar el usuario ❌");
+    const confirm = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esta acción eliminará al usuario de forma permanente.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) throw new Error("Fallo en la eliminación");
+
+        Swal.fire("✅ Eliminado", "Usuario eliminado correctamente", "success").then(() => {
+          navigate("/dashboard-admin/usuarios");
+        });
+      } catch (error) {
+        console.error("Error al eliminar usuario:", error);
+        Swal.fire("❌ Error", "No se pudo eliminar el usuario", "error");
+      }
     }
   };
 
