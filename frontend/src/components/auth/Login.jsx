@@ -7,6 +7,9 @@ import {
 } from "firebase/auth";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "../../context/AuthContext";
+import nafLogo from "../../assets/images/naf.jpg";
+import "../../assets/styles/Login.css";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -17,18 +20,16 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const { rol, user, login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      console.log("Attempting to login with username:", username);
-      const response = await fetch("http://localhost:3001/api/login", {
+      const response = await fetch("http://localhost:3001/api/users/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
@@ -38,22 +39,35 @@ const Login = () => {
       }
 
       const data = await response.json();
-      const { email, grupo } = data;
+      const { email } = data;
 
-      console.log("Login successful, signing in with Firebase"); // Log de inicio de sesión exitoso
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      if (grupo === 1) {
-        console.log("Redirecting to admin dashboard"); // Log de redirección a admin
-        navigate("/dashboard-admin/home");
-      } else if (grupo === 2) {
-        console.log("Redirecting to general dashboard"); // Log de redirección a general
-        navigate("/dashboard-general/home");
-      } else {
-        throw new Error("Grupo no válido");
+      const token = await userCredential.user.getIdToken();
+
+      const res = await fetch(
+        "http://localhost:3001/api/users/dashboard-access",
+        {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("No autorizado");
       }
-    } catch (error) {
-      console.error("Error signing in:", error); // Log de error
+
+      const result = await res.json();
+
+      login(userCredential.user);
+      navigate(result.redirect);
+    } catch (err) {
+      console.error("Error de login:", err);
       setError("Usuario o contraseña incorrectos.");
     }
   };
@@ -62,10 +76,10 @@ const Login = () => {
     e.preventDefault();
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("Enlace de reestablecimiento enviado al correo electrónico");
+      alert("Enlace de restablecimiento enviado al correo electrónico");
       setShowResetForm(false);
     } catch (error) {
-      setError(error.message);
+      setError("Error al enviar el enlace. Revisa el correo.");
     }
   };
 
@@ -77,20 +91,17 @@ const Login = () => {
     <div className="login-page">
       <div className="login-left">
         <div className="logo-container">
-          <img
-            src="/Logo-circulo-Militar.png"
-            alt="Círculo Militar Logo"
-            className="logo"
-          />
-          <h1>Gestor Documental</h1>
-          <p className="subtitle">Círculo Militar</p>
-          <p className="tagline">¡Mucho más que un buen club!</p>
+          <img src={nafLogo} alt="Logo NAF" className="logo" />
+          <h1>Núcleo de Apoyo Fiscal</h1>
+          <p className="subtitle">Núcleo de Apoyo Fiscal</p>
+          <p className="tagline">Facultad de Ciencias Administrativas - ESPE</p>
         </div>
       </div>
+
       <div className="login-right">
         {showResetForm ? (
           <form onSubmit={handlePasswordReset} className="login-form">
-            <h2>Reestablecer contraseña</h2>
+            <h2>Restablecer contraseña</h2>
             <div className="form-group">
               <label htmlFor="reset-email">Correo electrónico</label>
               <input
@@ -106,8 +117,8 @@ const Login = () => {
               <button type="button" onClick={() => setShowResetForm(false)}>
                 Cancelar
               </button>
-              {error && <p className="error-message">{error}</p>}
             </div>
+            {error && <p className="error-message">{error}</p>}
           </form>
         ) : (
           <form onSubmit={handleSubmit} className="login-form">
@@ -123,6 +134,7 @@ const Login = () => {
                 required
               />
             </div>
+
             <div className="form-group password-container">
               <label htmlFor="password">Contraseña</label>
               <div className="password-input-container">
@@ -142,6 +154,7 @@ const Login = () => {
                 </span>
               </div>
             </div>
+
             <div className="form-group">
               <a
                 href="#"
@@ -151,10 +164,29 @@ const Login = () => {
                 Olvidé mi contraseña
               </a>
             </div>
+
             <div className="button-container">
-              <button type="submit">Ingresar</button>
-              {error && <p className="error-message">{error}</p>}
-            </div>
+  <button type="submit">Ingresar</button>
+</div>
+
+<div className="button-container">
+  <button type="button" onClick={() => navigate("/register")}>
+    Registrarse
+  </button>
+</div>
+
+<div className="button-container">
+  <button type="button" onClick={() => navigate("/")}>
+    Volver al inicio
+  </button>
+</div>
+
+{error && <p className="error-message">{error}</p>}
+
+
+            {error && <p className="error-message">{error}</p>}
+
+            {error && <p className="error-message">{error}</p>}
           </form>
         )}
       </div>

@@ -1,8 +1,8 @@
-import React, {
+import {
   createContext,
-  useState,
   useContext,
   useEffect,
+  useState,
   useCallback,
 } from "react";
 import { auth } from "../config/firebaseConfig";
@@ -12,12 +12,11 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [grupo, setGrupo] = useState(null);
+  const [rol, setRol] = useState(null); // USAMOS 'rol' EN LUGAR DE 'grupo'
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const sessionTimeout = 3600 * 1000; // 1 hora
-
+  const [isAuthResolved, setIsAuthResolved] = useState(false);
+  const sessionTimeout = 3600 * 1000;
 
   const resetTimer = useCallback(() => {
     clearTimeout(window.sessionTimer);
@@ -27,72 +26,99 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-      setGrupo(null);
-      setUserData(null);
-    } catch (error) {
-      console.error("Error during logout:", error);
-    }
+  await signOut(auth); // Cierra la sesión de Firebase
+  setUser(null);
+  setRol(null);
+  setUserData(null);
+  setIsAuthResolved(false); // 🔄 Esto reinicia el estado de autenticación
+};
+
+
+
+  const login = (firebaseUser) => {
+    setUser(firebaseUser); // esto activa el onAuthStateChanged
   };
 
   useEffect(() => {
-    const fetchUserGroup = async (uid) => {
+  const fetchRol = async (uid) => {
+  try {
+    const res = await fetch(`http://localhost:3001/api/users/user-role/${uid}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status} - UID no encontrado`);
+    const data = await res.json();
+    if (!data.rol) throw new Error("Respuesta no contiene 'rol'");
+    setRol(data.rol);
+  } catch (err) {
+    console.error("❌ Error al obtener rol:", err.message);
+    setRol(null);
+  }
+};
+
+
+  const fetchUserData = async (uid) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/users/${uid}`);
+      const data = await res.json();
+      setUserData(data);
+    } catch (err) {
+      console.error("❌ Error al obtener datos del usuario:", err);
+      setUserData(null);
+    }
+  };
+
+  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    console.log("🟡 [onAuthStateChanged] Usuario detectado:", firebaseUser);
+
+    if (firebaseUser) {
+      setUser(firebaseUser);
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/user-group/${uid}`
-        );
-        const data = await response.json();
-        setGrupo(data.grupo);
-      } catch (error) {
-        console.error("Error fetching user grupo:", error);
+        await Promise.all([
+          fetchRol(firebaseUser.uid),
+          fetchUserData(firebaseUser.uid),
+        ]);
+        console.log("✅ Usuario y rol cargados");
+      } catch (err) {
+        console.error("❌ Error general al cargar usuario/rol:", err);
       }
-    };
 
-    const fetchUserData = async (uid) => {
-      try {
-        const response = await fetch(`http://localhost:3001/api/users/${uid}`);
-        const data = await response.json();
-        setUserData(data);
-        console.log("User Data configurado en AuthContext:", data); // <-- Agrega este console.log
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-        fetchUserGroup(user.uid);
-        fetchUserData(user.uid);
-        resetTimer(); // Resetear el temporizador al iniciar sesión
-        window.addEventListener("mousemove", resetTimer);
-        window.addEventListener("keydown", resetTimer);
-      } else {
-        setUser(null);
-        setGrupo(null);
-        setUserData(null);
-        clearTimeout(window.sessionTimer);
-        window.removeEventListener("mousemove", resetTimer);
-        window.removeEventListener("keydown", resetTimer);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      unsubscribe();
+      resetTimer();
+      window.addEventListener("mousemove", resetTimer);
+      window.addEventListener("keydown", resetTimer);
+    } else {
+      console.log("🔴 Sesión cerrada o no iniciada");
+      setUser(null);
+      setRol(null);
+      setUserData(null);
+      clearTimeout(window.sessionTimer);
       window.removeEventListener("mousemove", resetTimer);
       window.removeEventListener("keydown", resetTimer);
-    };
-  }, [resetTimer]);
+    }
 
-  if (loading) {
-    return <div>Cargando...</div>;
-  }
+    setIsAuthResolved(true); // ✅ Solo se resuelve cuando termina todo
+    setLoading(false);
+  });
+
+  return () => {
+    unsubscribe();
+    window.removeEventListener("mousemove", resetTimer);
+    window.removeEventListener("keydown", resetTimer);
+  };
+}, [resetTimer]);
+
+
+  if (loading)
+    return <div className="p-4 text-center">Cargando aplicación...</div>;
 
   return (
-    <AuthContext.Provider value={{ user, grupo, userData, handleLogout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        rol,
+        userData,
+        handleLogout,
+        login,
+        isAuthResolved,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

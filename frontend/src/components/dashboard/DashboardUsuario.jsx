@@ -1,0 +1,32 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+import Header from "../layout/Header";
+import Footer from "../layout/Footer";
+
+import MainContent from "../layout/MainContent";
+import Servicios from "../buttons/Servicios";
+import Biblioteca from "../buttons/Biblioteca";
+import Boletines from "../buttons/Boletines";
+import Galeria from "../buttons/Galeria";
+import Quienes from "../buttons/Quienes";
+import NAF from "../buttons/NAF";
+
+const DashboardUsuario = () => (
+  <>
+    <Header />
+
+      <Routes>
+        <Route path="inicio" element={<MainContent />} />
+        <Route path="servicios" element={<Servicios />} />
+        <Route path="biblioteca" element={<Biblioteca />} />
+        <Route path="boletines" element={<Boletines />} />
+        <Route path="galeria" element={<Galeria />} />
+        <Route path="quienes" element={<Quienes />} />
+        <Route path="naf" element={<NAF />} />
+        <Route path="*" element={<Navigate to="inicio" />} />
+      </Routes>
+
+    <Footer />
+  </>
+);
+
+export default DashboardUsuario;
