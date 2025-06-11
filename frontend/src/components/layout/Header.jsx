@@ -12,20 +12,14 @@ function Header() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-
+  
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
   const handleSignOut = async () => {
-  setLoggingOut(true); // Mostrar splash
-
-  setTimeout(async () => {
     await handleLogout();
     window.location.href = "/";
-  }, 1500);
-};
-
+  };
 
   const commonLinks = (basePath) => (
     <>
@@ -65,16 +59,6 @@ function Header() {
     rol === 1 ? "/dashboard-admin/perfil"
     : rol === 2 ? "/dashboard-editor/perfil"
     : "/dashboard-usuario/perfil";
-
-    if (loggingOut) {
-  return (
-    <div className="splash-screen">
-      <img src={nafLogo} alt="Logo NAF" className="splash-logo" />
-      <p className="splash-text">Cerrando sesión...</p>
-    </div>
-  );
-}
-
 
   return (
     <header className="header">

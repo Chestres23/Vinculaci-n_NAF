@@ -4,7 +4,8 @@ import { useAuth } from "../../context/AuthContext"; // 👈 Asegúrate de impor
 
 const UserManager = () => {
   const [usuarios, setUsuarios] = useState([]);
-  const { rol } = useAuth(); // 👈 Obtenemos el rol del usuario autenticado
+  const { rol, userData } = useAuth();
+
 
   useEffect(() => {
     const fetchUsuarios = async () => {
@@ -45,24 +46,39 @@ const UserManager = () => {
           </tr>
         </thead>
         <tbody>
-          {usuarios.map((user) => (
-            <tr key={user.FirebaseUid} className="text-center">
-              <td className="p-2 border">
-                {user.Nombre} {user.SegundoNombre} {user.Apellido} {user.SegundoApellido}
-              </td>
-              <td className="p-2 border">{user.Username}</td>
-              <td className="p-2 border">{user.CedulaRUC}</td>
-              <td className="p-2 border space-x-2">
-                <Link to={`ver/${user.FirebaseUid}`} className="text-green-600 underline">Ver</Link>
-                {esAdmin && (
-                  <>
-                    <Link to={`editar/${user.FirebaseUid}`} className="text-yellow-600 underline">Editar</Link>
-                    <Link to={`eliminar/${user.FirebaseUid}`} className="text-red-600 underline">Eliminar</Link>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
+          {usuarios.map((user) => {
+  const esMismoUsuario = user.FirebaseUid === userData?.FirebaseUid;
+
+
+  return (
+    <tr
+      key={user.FirebaseUid}
+      className={`text-center ${esMismoUsuario && esAdmin ? "bg-gray-200 text-gray-500" : ""}`}
+    >
+      <td className="p-2 border">
+        {user.Nombre} {user.SegundoNombre} {user.Apellido} {user.SegundoApellido}
+      </td>
+      <td className="p-2 border">{user.Username}</td>
+      <td className="p-2 border">{user.CedulaRUC}</td>
+      <td className="p-2 border space-x-2">
+        {esMismoUsuario && esAdmin ? (
+          <span className="italic text-gray-500">Acciones deshabilitadas</span>
+        ) : (
+          <>
+            <Link to={`ver/${user.FirebaseUid}`} className="text-green-600 underline">Ver</Link>
+            {esAdmin && (
+              <>
+                <Link to={`editar/${user.FirebaseUid}`} className="text-yellow-600 underline">Editar</Link>
+                <Link to={`eliminar/${user.FirebaseUid}`} className="text-red-600 underline">Eliminar</Link>
+              </>
+            )}
+          </>
+        )}
+      </td>
+    </tr>
+  );
+})}
+
         </tbody>
       </table>
     </div>
