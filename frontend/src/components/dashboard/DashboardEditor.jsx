@@ -12,6 +12,7 @@ import NAF from "../buttons/NAF";
 import Asesoria from "../asesoria/AsesoriasSolicitadas";
 import UserManager from "../users/UserManager";
 import VerUsuario from "../users/VerUsuario";
+import PerfilUsuario from "../users/PerfilUsuario";
 
 const DashboardEditor = () => (
   <>
@@ -28,6 +29,8 @@ const DashboardEditor = () => (
 
       <Route path="usuarios" element={<UserManager />} />
       <Route path="usuarios/ver/:uid" element={<VerUsuario />} />
+      <Route path="perfil" element={<PerfilUsuario />} />
+
 
       <Route path="ver-asesorias" element={<Asesoria />} />
 

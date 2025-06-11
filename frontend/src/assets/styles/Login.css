@@ -150,3 +150,31 @@
   margin-top: 1rem;
   font-size: 0.95rem;
 }
+
+.splash-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: white;
+  animation: fadeIn 0.5s ease-in-out;
+  z-index: 9999;
+}
+
+.splash-logo {
+  width: 160px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.splash-text {
+  font-size: 1.2rem;
+  color: #0d4d3c;
+  font-weight: bold;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

@@ -16,6 +16,7 @@ import EditarUsuario from "../users/EditarUsuario";
 import EliminarUsuario from "../users/EliminarUsuario";
 import VerUsuario from "../users/VerUsuario";
 import UserManager from "../users/UserManager";
+import PerfilUsuario from "../users/PerfilUsuario";
 
 const DashboardAdmin = () => (
   <>
@@ -36,6 +37,8 @@ const DashboardAdmin = () => (
       <Route path="usuarios/editar/:uid" element={<EditarUsuario />} />
       <Route path="usuarios/eliminar/:uid" element={<EliminarUsuario />} />
       <Route path="usuarios/ver/:uid" element={<VerUsuario />} />
+      <Route path="perfil" element={<PerfilUsuario />} />
+
 
       <Route path="ver-asesorias" element={<Asesoria />} />
 

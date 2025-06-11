@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { auth } from "../../config/firebaseConfig";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,14 +18,28 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showResetForm, setShowResetForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(true); // Splash loading
+  const [loggingIn, setLoggingIn] = useState(false);
+  
+
 
   const navigate = useNavigate();
   const { rol, user, login } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  // 1. Muestra el splash
+  setLoggingIn(true);
+
+  // 2. Espera un frame (~50ms) para permitir que React lo renderice
+  setTimeout(async () => {
     try {
       const response = await fetch("http://localhost:3001/api/users/login", {
         method: "POST",
@@ -41,36 +55,34 @@ const Login = () => {
       const data = await response.json();
       const { email } = data;
 
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
       const token = await userCredential.user.getIdToken();
 
-      const res = await fetch(
-        "http://localhost:3001/api/users/dashboard-access",
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
-        }
-      );
+      const res = await fetch("http://localhost:3001/api/users/dashboard-access", {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      });
 
-      if (!res.ok) {
-        throw new Error("No autorizado");
-      }
+      if (!res.ok) throw new Error("No autorizado");
 
       const result = await res.json();
 
       login(userCredential.user);
-      navigate(result.redirect);
+
+      setTimeout(() => {
+        navigate(result.redirect);
+      }, 1500); // mantener splash un poco antes de navegar
+
     } catch (err) {
       console.error("Error de login:", err);
+      setLoggingIn(false); // Oculta splash
       setError("Usuario o contraseña incorrectos.");
     }
-  };
+  }, 50); // <- justo aquí le das a React tiempo para renderizar
+};
+
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
@@ -86,6 +98,27 @@ const Login = () => {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  // 🔁 Splash screen al cargar
+  if (loading) {
+  return (
+    <div className="splash-screen">
+      <img src={nafLogo} alt="Logo NAF" className="splash-logo" />
+      <p className="splash-text">Cargando NAF...</p>
+    </div>
+  );
+}
+
+if (loggingIn) {
+  return (
+    <div className="splash-screen">
+      <img src={nafLogo} alt="Logo NAF" className="splash-logo" />
+      <p className="splash-text">Iniciando sesión...</p>
+    </div>
+  );
+}
+
+
 
   return (
     <div className="login-page">
@@ -166,25 +199,20 @@ const Login = () => {
             </div>
 
             <div className="button-container">
-  <button type="submit">Ingresar</button>
-</div>
+              <button type="submit">Ingresar</button>
+            </div>
 
-<div className="button-container">
-  <button type="button" onClick={() => navigate("/register")}>
-    Registrarse
-  </button>
-</div>
+            <div className="button-container">
+              <button type="button" onClick={() => navigate("/register")}>
+                Registrarse
+              </button>
+            </div>
 
-<div className="button-container">
-  <button type="button" onClick={() => navigate("/")}>
-    Volver al inicio
-  </button>
-</div>
-
-{error && <p className="error-message">{error}</p>}
-
-
-            {error && <p className="error-message">{error}</p>}
+            <div className="button-container">
+              <button type="button" onClick={() => navigate("/")}>
+                Volver al inicio
+              </button>
+            </div>
 
             {error && <p className="error-message">{error}</p>}
           </form>

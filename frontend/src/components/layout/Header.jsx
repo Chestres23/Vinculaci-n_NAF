@@ -4,7 +4,7 @@ import logo from "../../assets/images/escudo.png";
 import nafLogo from "../../assets/images/naf.jpg";
 import { FiMenu, FiX } from 'react-icons/fi';
 import React, { useState } from 'react';
-import "../../assets/styles/Header.css"; // Asegúrate de tener este CSS
+import "../../assets/styles/Header.css";
 
 function Header() {
   const { user, rol, userData, handleLogout } = useAuth();
@@ -12,13 +12,20 @@ function Header() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
   const handleSignOut = async () => {
+  setLoggingOut(true); // Mostrar splash
+
+  setTimeout(async () => {
     await handleLogout();
     window.location.href = "/";
-  };
+  }, 1500);
+};
+
 
   const commonLinks = (basePath) => (
     <>
@@ -53,13 +60,29 @@ function Header() {
     ),
   };
 
+  // ➕ Ruta dinámica al perfil por rol
+  const perfilPath =
+    rol === 1 ? "/dashboard-admin/perfil"
+    : rol === 2 ? "/dashboard-editor/perfil"
+    : "/dashboard-usuario/perfil";
+
+    if (loggingOut) {
+  return (
+    <div className="splash-screen">
+      <img src={nafLogo} alt="Logo NAF" className="splash-logo" />
+      <p className="splash-text">Cerrando sesión...</p>
+    </div>
+  );
+}
+
+
   return (
     <header className="header">
       <div className="header-top relative flex justify-between items-center">
         <img src={logo} alt="Escudo" className="logo logo-left" />
         <h1 className="title">NÚCLEO DE APOYO CONTABLE Y FISCAL - ESPE</h1>
 
-        {/* 🔒 Botones de sesión reposicionados */}
+        {/* 🔒 Zona de sesión (debajo del logo derecho) */}
         <div className="logo-actions absolute top-full right-4 mt-2 flex flex-col items-end">
           {!user ? (
             <div className="flex flex-col gap-1">
@@ -67,11 +90,14 @@ function Header() {
               <Link to="/register" className="btn-register">Registrarse</Link>
             </div>
           ) : (
-            <div className="flex flex-col gap-1 text-right">
+            <div className="flex flex-col gap-1 text-right items-end">
               <span className="text-sm font-semibold text-green-900">
                 {userData?.nombre} ({rol === 1 ? "Admin" : rol === 2 ? "Editor" : "Usuario"})
               </span>
-              <button onClick={handleSignOut} className="btn-logout">Cerrar Sesión</button>
+              <div className="flex gap-2">
+                <Link to={perfilPath} className="btn-perfil">Perfil</Link>
+                <button onClick={handleSignOut} className="btn-logout">Cerrar Sesión</button>
+              </div>
             </div>
           )}
         </div>

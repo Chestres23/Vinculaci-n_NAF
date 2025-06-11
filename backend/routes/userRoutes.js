@@ -10,7 +10,10 @@ const {
     getUserByUID,
     updateUser,
     deleteUser,
-    getDashboardAccess
+    getDashboardAccess,
+    actualizarPerfilUsuario,
+    eliminarCuentaUsuario,
+    cambiarContrasena
 } = require('../controllers/userController');
 
 const { authenticate } = require("../middlewares/authMiddleware");
@@ -41,6 +44,14 @@ router.delete('/:id', deleteUser);
 
 // Ruta para obtener el grupo de un usuario por su UID
 router.get('/user-role/:uid', getUserRole);
+
+// Ruta para actualizar el perfil del usuario
+router.put("/perfil/:uid", actualizarPerfilUsuario);
+router.delete("/perfil/:uid", eliminarCuentaUsuario);
+
+router.post("/reset-password", cambiarContrasena);
+
+
 
 router.get('/dashboard-access', authenticate, getDashboardAccess);
 

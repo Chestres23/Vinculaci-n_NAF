@@ -9,6 +9,7 @@ import Boletines from "../buttons/Boletines";
 import Galeria from "../buttons/Galeria";
 import Quienes from "../buttons/Quienes";
 import NAF from "../buttons/NAF";
+import PerfilUsuario from "../users/PerfilUsuario";
 
 const DashboardUsuario = () => (
   <>
@@ -22,7 +23,9 @@ const DashboardUsuario = () => (
       <Route path="galeria" element={<Galeria />} />
       <Route path="quienes" element={<Quienes />} />
       <Route path="naf" element={<NAF />} />
+      <Route path="perfil" element={<PerfilUsuario />} />
       <Route path="*" element={<Navigate to="inicio" />} />
+      
     </Routes>
 
     <Footer />

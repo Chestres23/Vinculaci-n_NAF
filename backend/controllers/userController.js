@@ -1,6 +1,7 @@
 const { sql, poolPromise } = require("../db");
 const admin = require("../config/firebaseAdminConfig");
 
+
 // Función para obtener el grupo de usuario por UID de Firebase
 const getUserRole = async (req, res) => {
   const { uid } = req.params;
@@ -398,6 +399,81 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const actualizarPerfilUsuario = async (req, res) => {
+  const { uid } = req.params;
+  const {
+    nombre, segundoNombre, apellido, segundoApellido,
+    cedulaRUC, telefono, ciudad, tipoContribuyente
+  } = req.body;
+
+  try {
+    const pool = await poolPromise;
+
+    await pool.request()
+      .input("FirebaseUid", sql.NVarChar, uid)
+      .input("Nombre", sql.NVarChar, nombre)
+      .input("SegundoNombre", sql.NVarChar, segundoNombre)
+      .input("Apellido", sql.NVarChar, apellido)
+      .input("SegundoApellido", sql.NVarChar, segundoApellido)
+      .input("CedulaRUC", sql.NVarChar, cedulaRUC)
+      .input("Telefono", sql.NVarChar, telefono)
+      .input("Ciudad", sql.NVarChar, ciudad)
+      .input("TipoContribuyente", sql.NVarChar, tipoContribuyente)
+      .query(`
+        UPDATE Usuario SET
+          Nombre = @Nombre,
+          SegundoNombre = @SegundoNombre,
+          Apellido = @Apellido,
+          SegundoApellido = @SegundoApellido,
+          CedulaRUC = @CedulaRUC,
+          Telefono = @Telefono,
+          Ciudad = @Ciudad,
+          TipoContribuyente = @TipoContribuyente
+        WHERE FirebaseUid = @FirebaseUid
+      `);
+
+    res.json({ message: "Perfil actualizado correctamente" });
+  } catch (error) {
+    console.error("❌ Error al actualizar perfil:", error);
+    res.status(500).json({ error: "Error al actualizar perfil" });
+  }
+};
+
+// DELETE /api/users/perfil/:uid
+const eliminarCuentaUsuario = async (req, res) => {
+  const { uid } = req.params;
+
+  try {
+    const pool = await poolPromise;
+
+    // Eliminar de Firebase
+    await admin.auth().deleteUser(uid);
+
+    // Eliminar de la base de datos
+    await pool.request()
+      .input("FirebaseUid", sql.NVarChar, uid)
+      .query("DELETE FROM Usuario WHERE FirebaseUid = @FirebaseUid");
+
+    res.json({ message: "Cuenta eliminada correctamente" });
+  } catch (error) {
+    console.error("❌ Error al eliminar cuenta:", error);
+    res.status(500).json({ error: "Error al eliminar cuenta" });
+  }
+};
+
+// Nueva ruta en `userController.js`
+const cambiarContrasena = async (req, res) => {
+  const { email, newPassword } = req.body;
+  try {
+    const userRecord = await admin.auth().getUserByEmail(email);
+    await admin.auth().updateUser(userRecord.uid, { password: newPassword });
+    res.json({ message: "Contraseña actualizada en Firebase" });
+  } catch (error) {
+    console.error("❌ Error al actualizar contraseña:", error);
+    res.status(500).json({ error: "Error al actualizar contraseña" });
+  }
+};
+
 
 const getDashboardAccess = async (req, res) => {
   const { rol } = req;
@@ -422,4 +498,7 @@ module.exports = {
   updateUser,
   deleteUser,
   getDashboardAccess,
+  actualizarPerfilUsuario,
+  eliminarCuentaUsuario,
+  cambiarContrasena
 };
