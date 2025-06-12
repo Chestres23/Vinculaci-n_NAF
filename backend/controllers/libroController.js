@@ -1,43 +1,53 @@
-const fs = require("fs");
-const path = require("path");
 const { poolPromise } = require("../db");
+const { cloudinary } = require("../utils/cloudinary");
+const {
+  uploadToCloudinary,
+  getPublicIdFromUrl,
+} = require("../utils/cloudinaryHelper");
 
 // Crear libro
 async function crearLibro(req, res) {
-  const { titulo, autor, descripcion, fechaPublicacion, tipo, subidoPor } = req.body;
+  const { titulo, autor, descripcion, fechaPublicacion, tipo, subidoPor } =
+    req.body;
   const archivo = req.file;
 
   if (!archivo) return res.status(400).json({ error: "Archivo PDF requerido" });
 
-  const rutaPdf = `/uploads/libros/${archivo.filename}`;
-
   try {
+    const rutaPdf = await uploadToCloudinary(
+      archivo.buffer,
+      "biblioteca",
+      archivo.originalname
+    );
+
     const pool = await poolPromise;
-    await pool.request()
+    await pool
+      .request()
       .input("titulo", titulo)
       .input("autor", autor)
       .input("descripcion", descripcion)
       .input("fechaPublicacion", fechaPublicacion)
       .input("tipo", tipo)
-      .input("subidoPor", subidoPor)
       .input("rutaPdf", rutaPdf)
-      .query(`
+      .input("subidoPor", subidoPor).query(`
         INSERT INTO Libro (Titulo, Autor, Descripcion, FechaPublicacion, Tipo, RutaPdf, SubidoPor)
         VALUES (@titulo, @autor, @descripcion, @fechaPublicacion, @tipo, @rutaPdf, @subidoPor)
-
       `);
+
     res.status(201).json({ message: "Libro subido correctamente" });
   } catch (error) {
     console.error("Error al crear libro:", error);
-    res.status(500).json({ error: "Error al crear libro" });
+    res.status(500).json({ error: "Error inesperado" });
   }
 }
 
-// Obtener todos
+// Obtener todos los libros
 async function obtenerLibros(req, res) {
   try {
     const pool = await poolPromise;
-    const result = await pool.request().query("SELECT * FROM Libro ORDER BY FechaPublicacion DESC");
+    const result = await pool
+      .request()
+      .query("SELECT * FROM Libro ORDER BY FechaPublicacion DESC");
     res.json(result.recordset);
   } catch (error) {
     console.error("Error al obtener libros:", error);
@@ -48,38 +58,43 @@ async function obtenerLibros(req, res) {
 // Actualizar libro
 async function actualizarLibro(req, res) {
   const { id } = req.params;
-  const { titulo, autor, descripcion, fechaPublicacion, tipo, rutaPdf } = req.body;
+  const { titulo, autor, descripcion, fechaPublicacion, tipo } = req.body;
   const archivo = req.file;
 
   try {
     const pool = await poolPromise;
 
-    // Obtener ruta anterior
-    const result = await pool.request()
+    const result = await pool
+      .request()
       .input("id", id)
       .query("SELECT RutaPdf FROM Libro WHERE Id = @id");
 
-    if (result.recordset.length === 0) {
+    if (result.recordset.length === 0)
       return res.status(404).json({ error: "Libro no encontrado" });
-    }
 
     const rutaAnterior = result.recordset[0].RutaPdf;
-    const nuevaRutaPdf = archivo ? `/uploads/libros/${archivo.filename}` : rutaPdf;
+    let nuevaRutaPdf = rutaAnterior;
 
     if (archivo) {
-      const rutaFisica = path.join(__dirname, "..", rutaAnterior);
-      if (fs.existsSync(rutaFisica)) fs.unlinkSync(rutaFisica);
+      const publicId = getPublicIdFromUrl(rutaAnterior);
+      await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+
+      nuevaRutaPdf = await uploadToCloudinary(
+        archivo.buffer,
+        "biblioteca",
+        archivo.originalname
+      );
     }
 
-    await pool.request()
+    await pool
+      .request()
       .input("id", id)
       .input("titulo", titulo)
       .input("autor", autor)
       .input("descripcion", descripcion)
       .input("fechaPublicacion", fechaPublicacion)
       .input("tipo", tipo)
-      .input("rutaPdf", nuevaRutaPdf)
-      .query(`
+      .input("rutaPdf", nuevaRutaPdf).query(`
         UPDATE Libro
         SET Titulo = @titulo,
             Autor = @autor,
@@ -90,7 +105,7 @@ async function actualizarLibro(req, res) {
         WHERE Id = @id
       `);
 
-    res.json({ message: "Libro actualizado correctamente" });
+    res.status(200).json({ message: "Libro actualizado correctamente" });
   } catch (error) {
     console.error("Error al actualizar libro:", error);
     res.status(500).json({ error: "Error al actualizar libro" });
@@ -103,30 +118,49 @@ async function eliminarLibro(req, res) {
 
   try {
     const pool = await poolPromise;
-
-    const result = await pool.request()
+    const result = await pool
+      .request()
       .input("id", id)
       .query("SELECT RutaPdf FROM Libro WHERE Id = @id");
 
-    if (result.recordset.length === 0) return res.status(404).json({ error: "Libro no encontrado" });
+    if (result.recordset.length === 0) {
+      console.warn("⚠️ Libro no encontrado con ID:", id);
+      return res.status(404).json({ error: "Libro no encontrado" });
+    }
 
-    const rutaFisica = path.join(__dirname, "..", result.recordset[0].RutaPdf);
-    if (fs.existsSync(rutaFisica)) fs.unlinkSync(rutaFisica);
+    const rutaPdf = result.recordset[0].RutaPdf;
+    console.log("📁 Ruta del PDF obtenida:", rutaPdf);
 
-    await pool.request()
+    const publicId = getPublicIdFromUrl(rutaPdf, "biblioteca");
+
+if (publicId) {
+  const result = await cloudinary.uploader.destroy(publicId, {
+    resource_type: "raw"
+  });
+  console.log("📤 Resultado de eliminación Cloudinary:", result);
+}
+
+
+
+    await pool
+      .request()
       .input("id", id)
       .query("DELETE FROM Libro WHERE Id = @id");
 
-    res.json({ message: "Libro eliminado correctamente" });
+    console.log("✅ Registro eliminado de la base de datos.");
+
+    res.json({ message: "Libro y archivo eliminados correctamente" });
+
   } catch (error) {
-    console.error("Error al eliminar libro:", error);
+    console.error("❌ Error al eliminar libro:", error);
     res.status(500).json({ error: "Error al eliminar libro" });
   }
 }
+
 
 module.exports = {
   crearLibro,
   obtenerLibros,
   actualizarLibro,
-  eliminarLibro
+  eliminarLibro,
 };

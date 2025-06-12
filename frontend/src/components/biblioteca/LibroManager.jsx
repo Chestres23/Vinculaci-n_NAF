@@ -35,7 +35,7 @@ const LibroManager = () => {
               <td className="p-2 border">{l.Autor}</td>
               <td className="p-2 border">{l.Tipo}</td>
               <td className="p-2 border">
-                <a href={`http://localhost:3001${l.RutaPdf}`} target="_blank" rel="noreferrer" className="text-blue-600 underline">Ver</a>
+                <a href={l.RutaPdf} target="_blank" rel="noreferrer" className="text-blue-600 underline">Ver</a>
               </td>
               <td className="p-2 border space-x-2">
                 <Link to={`editar/${l.Id}`} className="text-yellow-600 underline">Editar</Link>

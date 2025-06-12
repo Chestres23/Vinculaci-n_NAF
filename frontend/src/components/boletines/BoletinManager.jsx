@@ -39,7 +39,7 @@ const BoletinManager = () => {
               <td className="p-2 border">{b.FechaPublicacion?.split("T")[0]}</td>
               <td className="p-2 border">
                 <a
-                href={`http://localhost:3001${b.RutaPdf}`}
+                href={b.RutaPdf}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 text-center text-sm"

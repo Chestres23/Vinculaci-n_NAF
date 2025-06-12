@@ -89,7 +89,7 @@ const EditarBoletin = () => {
       <div className="mb-2">
         <p className="text-sm text-gray-600 mb-1">Archivo actual:</p>
         <a
-          href={`http://localhost:3001${form.rutaPdf}`}
+          href={form.rutaPdf}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 underline text-sm"

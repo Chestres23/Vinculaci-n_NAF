@@ -1,17 +1,17 @@
-const { sql, poolPromise } = require("../db");
-const fs = require("fs");
-const path = require("path");
+const { poolPromise } = require("../db");
+const { cloudinary } = require("../utils/cloudinary");
+const { uploadToCloudinary, getPublicIdFromUrl } = require("../utils/cloudinaryHelper");
 
-// Crear un boletín
+// Crear boletín
 async function crearBoletin(req, res) {
   const { titulo, descripcion, fechaPublicacion, subidoPor } = req.body;
   const archivo = req.file;
 
   if (!archivo) return res.status(400).json({ error: "No se subió ningún archivo" });
 
-  const rutaPdf = `/uploads/boletines/${archivo.filename}`;
-
   try {
+    const rutaPdf = await uploadToCloudinary(archivo.buffer, "boletines", archivo.originalname);
+
     const pool = await poolPromise;
     await pool.request()
       .input("titulo", titulo)
@@ -25,12 +25,12 @@ async function crearBoletin(req, res) {
       `);
 
     res.status(201).json({ message: "Boletín creado correctamente" });
+
   } catch (error) {
-    console.error("Error al crear boletín:", error);
+    console.error("❌ Error al crear boletín:", error);
     res.status(500).json({ error: "Error al crear boletín" });
   }
 }
-
 
 // Obtener todos los boletines
 async function obtenerBoletines(req, res) {
@@ -39,7 +39,7 @@ async function obtenerBoletines(req, res) {
     const result = await pool.request().query("SELECT * FROM Boletin ORDER BY FechaPublicacion DESC");
     res.json(result.recordset);
   } catch (error) {
-    console.error("Error al obtener boletines:", error);
+    console.error("❌ Error al obtener boletines:", error);
     res.status(500).json({ error: "Error al obtener boletines" });
   }
 }
@@ -47,36 +47,29 @@ async function obtenerBoletines(req, res) {
 // Actualizar boletín
 async function actualizarBoletin(req, res) {
   const { id } = req.params;
-  const { titulo, descripcion, fechaPublicacion, rutaPdf } = req.body;
+  const { titulo, descripcion, fechaPublicacion } = req.body;
   const archivo = req.file;
 
   try {
     const pool = await poolPromise;
 
-    // 1. Obtener la ruta actual del boletín
     const result = await pool.request()
       .input("id", id)
       .query("SELECT RutaPdf FROM Boletin WHERE Id = @id");
 
-    if (result.recordset.length === 0) {
+    if (result.recordset.length === 0)
       return res.status(404).json({ error: "Boletín no encontrado" });
-    }
 
     const rutaActual = result.recordset[0].RutaPdf;
     let nuevaRutaPdf = rutaActual;
 
-    // 2. Si se sube un nuevo archivo, reemplazar y eliminar el anterior
     if (archivo) {
-      nuevaRutaPdf = `/uploads/boletines/${archivo.filename}`;
+      const publicId = getPublicIdFromUrl(rutaActual, "boletines");
+      await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
 
-      // Ruta física del archivo anterior
-      const rutaFisicaAnterior = path.join(__dirname, "..", rutaActual);
-      if (fs.existsSync(rutaFisicaAnterior)) {
-        fs.unlinkSync(rutaFisicaAnterior);
-      }
+      nuevaRutaPdf = await uploadToCloudinary(archivo.buffer, "boletines", archivo.originalname);
     }
 
-    // 3. Actualizar el boletín en la base
     await pool.request()
       .input("id", id)
       .input("titulo", titulo)
@@ -95,11 +88,10 @@ async function actualizarBoletin(req, res) {
     res.status(200).json({ message: "Boletín actualizado correctamente" });
 
   } catch (error) {
-    console.error("Error al actualizar boletín:", error);
+    console.error("❌ Error al actualizar boletín:", error);
     res.status(500).json({ error: "Error al actualizar boletín" });
   }
 }
-
 
 // Eliminar boletín
 async function eliminarBoletin(req, res) {
@@ -107,33 +99,26 @@ async function eliminarBoletin(req, res) {
 
   try {
     const pool = await poolPromise;
-
-    // Obtener la ruta del archivo antes de eliminar
     const result = await pool.request()
       .input("id", id)
       .query("SELECT RutaPdf FROM Boletin WHERE Id = @id");
 
-    if (result.recordset.length === 0) {
+    if (result.recordset.length === 0)
       return res.status(404).json({ error: "Boletín no encontrado" });
-    }
 
     const rutaPdf = result.recordset[0].RutaPdf;
-    const rutaFisica = path.join(__dirname, "..", rutaPdf);
+    const publicId = getPublicIdFromUrl(rutaPdf, "boletines");
 
-    // Eliminar el boletín de la base
-    await pool.request()
-      .input("id", id)
-      .query("DELETE FROM Boletin WHERE Id = @id");
+    console.log("🗑️ Eliminando boletín en Cloudinary:", publicId);
 
-    // Eliminar el archivo del disco si existe
-    if (fs.existsSync(rutaFisica)) {
-      fs.unlinkSync(rutaFisica);
-    }
+    await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+
+    await pool.request().input("id", id).query("DELETE FROM Boletin WHERE Id = @id");
 
     res.status(200).json({ message: "Boletín y archivo eliminados correctamente" });
 
   } catch (error) {
-    console.error("Error al eliminar boletín:", error);
+    console.error("❌ Error al eliminar boletín:", error);
     res.status(500).json({ error: "Error al eliminar boletín" });
   }
 }
@@ -142,5 +127,5 @@ module.exports = {
   crearBoletin,
   obtenerBoletines,
   actualizarBoletin,
-  eliminarBoletin,
+  eliminarBoletin
 };

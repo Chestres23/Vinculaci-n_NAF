@@ -61,13 +61,14 @@ const Boletines = () => {
                   </p>
                 </div>
                 <a
-                href={`http://localhost:3001${boletin.RutaPdf}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 text-center text-sm"
-                >
-                Ver PDF
-                </a>
+  href={boletin.RutaPdf}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="mt-auto bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-green-600 text-center"
+>
+  Ver PDF
+</a>
+
 
 
               </div>

@@ -47,13 +47,14 @@ const Biblioteca = () => {
                 <p className="text-gray-700 mb-4">{libro.Descripcion}</p>
               </div>
               <a
-                href={`http://localhost:3001${libro.RutaPdf}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-auto bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-green-600 text-center"
-              >
-                Ver PDF
-              </a>
+  href={libro.RutaPdf}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="mt-auto bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-green-600 text-center"
+>
+  Ver PDF
+</a>
+
             </div>
           ))}
         </div>
