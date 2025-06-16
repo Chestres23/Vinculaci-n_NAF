@@ -97,13 +97,26 @@ async function createTables() {
       CREATE TABLE Boletin (
         Id INT IDENTITY(1,1) PRIMARY KEY,
         Titulo NVARCHAR(255) NOT NULL,
-        Descripcion NVARCHAR(500),
+        Descripcion TEXT,
         FechaPublicacion DATE,
-        RutaPdf NVARCHAR(500),
-        SubidoPor UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Usuario(Id),
+        RutaPdf NVARCHAR(512) NOT NULL,
+        SubidoPor UNIQUEIDENTIFIER,
         FechaSubida DATETIME DEFAULT GETDATE()
-      );`
+      );`,
 
+      //Tabla Libro
+      `IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Libro' AND xtype='U')
+      CREATE TABLE Libro (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Titulo NVARCHAR(255) NOT NULL,
+        Autor NVARCHAR(255),
+        Descripcion NVARCHAR(MAX),
+        FechaPublicacion DATE,
+        Tipo NVARCHAR(100),
+        RutaPdf NVARCHAR(512),
+        SubidoPor UNIQUEIDENTIFIER,
+        FechaSubida DATETIME
+      );`,
 
       // Foreign Keys
 
@@ -140,19 +153,46 @@ async function createTables() {
       REFERENCES Usuario(Id);`,
 
       // Descarga.UsuarioId → Usuario.Id
-      `ALTER TABLE Descarga
+      `IF NOT EXISTS (
+        SELECT * FROM sys.foreign_keys WHERE name = 'FK_Descarga_Usuario'
+      )
+      ALTER TABLE Descarga
       ADD CONSTRAINT FK_Descarga_Usuario FOREIGN KEY (UsuarioId)
-      REFERENCES Usuario(Id);`,
+      REFERENCES Usuario(Id);
+      `,
 
       // Descarga.DocumentoId → Documento.Id
-      `ALTER TABLE Descarga
+      `IF NOT EXISTS (
+        SELECT * FROM sys.foreign_keys WHERE name = 'FK_Descarga_Documento'
+      )
+      ALTER TABLE Descarga
       ADD CONSTRAINT FK_Descarga_Documento FOREIGN KEY (DocumentoId)
       REFERENCES Documento(Id);`,
 
       // Sugerencia.UsuarioId → Usuario.Id
-      `ALTER TABLE Sugerencia
+      `IF NOT EXISTS (
+        SELECT * FROM sys.foreign_keys WHERE name = 'FK_Sugerencia_Usuario'
+      )
+      ALTER TABLE Sugerencia
       ADD CONSTRAINT FK_Sugerencia_Usuario FOREIGN KEY (UsuarioId)
+      REFERENCES Usuario(Id);`,
+
+      // Libro.SubidoPor → Usuario.Id (con nombre fijo)
+      `IF NOT EXISTS (
+        SELECT * FROM sys.foreign_keys WHERE name = 'FK_Libro_Usuario'
+      )
+      ALTER TABLE Libro
+      ADD CONSTRAINT FK_Libro_Usuario FOREIGN KEY (SubidoPor)
+      REFERENCES Usuario(Id);`,
+
+      // Boletin.SubidoPor → Usuario.Id (con nombre fijo)
+     `IF NOT EXISTS (
+        SELECT * FROM sys.foreign_keys WHERE name = 'FK_Boletin_Usuario'
+      )
+      ALTER TABLE Boletin
+      ADD CONSTRAINT FK_Boletin_Usuario FOREIGN KEY (SubidoPor)
       REFERENCES Usuario(Id);`
+
     ];
 
     for (const query of queries) {
