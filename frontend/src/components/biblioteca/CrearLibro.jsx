@@ -10,23 +10,21 @@ const CrearLibro = () => {
     titulo: "", autor: "", descripcion: "", fechaPublicacion: "", tipo: ""
   });
   const [archivo, setArchivo] = useState(null);
-  const API = process.env.REACT_APP_API_URL;
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleFileChange = (e) => {
-  const file = e.target.files[0];
-  const maxSize = 10 * 1024 * 1024; // 10 MB
+    const file = e.target.files[0];
+    const maxSize = 10 * 1024 * 1024; // 10 MB
 
-  if (file && file.size > maxSize) {
-    Swal.fire("❌ Archivo demasiado grande", "El tamaño máximo es 10 MB.", "error");
-    setArchivo(null);
-    e.target.value = null; // limpia el input
-    return;
-  }
+    if (file && file.size > maxSize) {
+      Swal.fire("❌ Archivo demasiado grande", "El tamaño máximo es 10 MB.", "error");
+      setArchivo(null);
+      e.target.value = null; // limpia el input
+      return;
+    }
 
-  setArchivo(file);
-};
-
+    setArchivo(file);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +43,7 @@ const CrearLibro = () => {
       formData.append("subidoPor", userData?.Id);
       formData.append("archivoPdf", archivo);
 
-      const res = await fetch(`${API}/api/libros/crear`, {
+      const res = await fetch(`http://localhost:3001/api/libros/crear`, {
         method: "POST",
         body: formData,
       });
@@ -98,7 +96,6 @@ const CrearLibro = () => {
         className="w-full mb-4"
       />
       <p className="text-sm text-gray-500 mb-2">Solo archivos PDF menores a 10MB.</p>
-
 
       <button
         type="submit"

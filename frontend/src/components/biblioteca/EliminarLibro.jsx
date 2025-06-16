@@ -6,10 +6,9 @@ const EliminarLibro = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [libro, setLibro] = useState(null);
-  const API = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
-    fetch(`${API}/api/libros/ver`)
+    fetch(`http://localhost:3001/api/libros/ver`)
       .then((res) => res.json())
       .then((data) => {
         const libroEncontrado = data.find((l) => l.Id.toString() === id);
@@ -19,7 +18,7 @@ const EliminarLibro = () => {
         console.error("❌ Error al obtener libro:", err);
         Swal.fire("❌ Error", "No se pudo cargar la información del libro.", "error");
       });
-  }, [id, API]);
+  }, [id]);
 
   const handleDelete = async () => {
     const result = await Swal.fire({
@@ -42,7 +41,7 @@ const EliminarLibro = () => {
     });
 
     try {
-      const res = await fetch(`${API}/api/libros/eliminar/${id}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:3001/api/libros/eliminar/${id}`, { method: "DELETE" });
 
       if (!res.ok) throw new Error("No se pudo eliminar el libro.");
 

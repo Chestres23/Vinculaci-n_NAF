@@ -14,10 +14,9 @@ const EditarLibro = () => {
     rutaPdf: "",
   });
   const [archivo, setArchivo] = useState(null);
-  const API = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
-    fetch(`${API}/api/libros/ver`)
+    fetch(`http://localhost:3001/api/libros/ver`)
       .then((res) => res.json())
       .then((data) => {
         const libro = data.find((l) => l.Id.toString() === id);
@@ -36,7 +35,7 @@ const EditarLibro = () => {
         console.error("❌ Error al obtener el libro:", error);
         Swal.fire("❌ Error", "No se pudo cargar el libro.", "error");
       });
-  }, [id, API]);
+  }, [id]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -81,7 +80,7 @@ const EditarLibro = () => {
         formData.append("rutaPdf", form.rutaPdf);
       }
 
-      const res = await fetch(`${API}/api/libros/editar/${id}`, {
+      const res = await fetch(`http://localhost:3001/api/libros/editar/${id}`, {
         method: "PUT",
         body: formData,
       });

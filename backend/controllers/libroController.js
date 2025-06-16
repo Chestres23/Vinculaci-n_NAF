@@ -143,25 +143,13 @@ async function eliminarLibro(req, res) {
     const rutaPdf = result.recordset[0].RutaPdf;
     console.log("📁 Ruta del PDF obtenida:", rutaPdf);
 
-    const fullPublicId = getPublicIdFromUrl(rutaPdf); // biblioteca/tapi9qgjze4awthjxai1
-console.log("🔎 Extraído public_id completo:", fullPublicId);
+    const publicId = getPublicIdFromUrl(rutaPdf); // contiene carpeta y .pdf
+    console.log("🔎 public_id limpio:", publicId);
 
-const publicId = fullPublicId.split('/')[1]; // quitar 'biblioteca/'
-console.log("🗑️ Eliminando en Cloudinary con public_id:", publicId);
-
-if (!publicId) {
-  console.warn("❌ No se pudo extraer el public_id del PDF. Abortando eliminación.");
-  return res.status(500).json({ error: "No se pudo extraer el public_id del archivo" });
-}
-
-try {
-  const deleteResult = await cloudinary.uploader.destroy(publicId, {
-  resource_type: "raw"
-});
-console.log("📤 Resultado de eliminación Cloudinary:", deleteResult);
-} catch (deleteError) {
-  console.error("❌ Error al eliminar en Cloudinary:", deleteError);
-}
+    const deleteResult = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "raw"
+    });
+    console.log("📤 Resultado de eliminación Cloudinary:", deleteResult);
 
     await pool
       .request()
@@ -175,6 +163,7 @@ console.log("📤 Resultado de eliminación Cloudinary:", deleteResult);
     res.status(500).json({ error: "Error al eliminar libro" });
   }
 }
+
 
 module.exports = {
   crearLibro,
