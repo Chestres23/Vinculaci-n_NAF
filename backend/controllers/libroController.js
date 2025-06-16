@@ -1,4 +1,5 @@
 const { poolPromise } = require("../db");
+const axios = require("axios");
 const { cloudinary } = require("../utils/cloudinary");
 const {
   uploadToCloudinary,
@@ -14,11 +15,15 @@ async function crearLibro(req, res) {
   if (!archivo) return res.status(400).json({ error: "Archivo PDF requerido" });
 
   try {
+    console.log(`📁 Intentando subir: ${archivo.originalname}...`);
+
     const rutaPdf = await uploadToCloudinary(
       archivo.buffer,
       "biblioteca",
       archivo.originalname
     );
+
+    console.log("✅ Ruta final del PDF:", rutaPdf);
 
     const pool = await poolPromise;
     await pool
@@ -36,18 +41,25 @@ async function crearLibro(req, res) {
 
     res.status(201).json({ message: "Libro subido correctamente" });
   } catch (error) {
-    console.error("Error al crear libro:", error);
+    console.error("❌ Error al crear libro:", error);
     res.status(500).json({ error: "Error inesperado" });
   }
 }
 
-// Obtener todos los libros
+// Obtener todos los libros con datos del usuario que los subió
 async function obtenerLibros(req, res) {
   try {
     const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .query("SELECT * FROM Libro ORDER BY FechaPublicacion DESC");
+    const result = await pool.request().query(`
+      SELECT 
+        l.*, 
+        u.Nombre, 
+        u.Apellido, 
+        u.Username
+      FROM Libro l
+      LEFT JOIN Usuario u ON l.SubidoPor = u.Id
+      ORDER BY l.FechaPublicacion DESC
+    `);
     res.json(result.recordset);
   } catch (error) {
     console.error("Error al obtener libros:", error);
@@ -131,16 +143,25 @@ async function eliminarLibro(req, res) {
     const rutaPdf = result.recordset[0].RutaPdf;
     console.log("📁 Ruta del PDF obtenida:", rutaPdf);
 
-    const publicId = getPublicIdFromUrl(rutaPdf, "biblioteca");
+    const fullPublicId = getPublicIdFromUrl(rutaPdf); // biblioteca/tapi9qgjze4awthjxai1
+console.log("🔎 Extraído public_id completo:", fullPublicId);
 
-if (publicId) {
-  const result = await cloudinary.uploader.destroy(publicId, {
-    resource_type: "raw"
-  });
-  console.log("📤 Resultado de eliminación Cloudinary:", result);
+const publicId = fullPublicId.split('/')[1]; // quitar 'biblioteca/'
+console.log("🗑️ Eliminando en Cloudinary con public_id:", publicId);
+
+if (!publicId) {
+  console.warn("❌ No se pudo extraer el public_id del PDF. Abortando eliminación.");
+  return res.status(500).json({ error: "No se pudo extraer el public_id del archivo" });
 }
 
-
+try {
+  const deleteResult = await cloudinary.uploader.destroy(publicId, {
+  resource_type: "raw"
+});
+console.log("📤 Resultado de eliminación Cloudinary:", deleteResult);
+} catch (deleteError) {
+  console.error("❌ Error al eliminar en Cloudinary:", deleteError);
+}
 
     await pool
       .request()
@@ -148,15 +169,12 @@ if (publicId) {
       .query("DELETE FROM Libro WHERE Id = @id");
 
     console.log("✅ Registro eliminado de la base de datos.");
-
     res.json({ message: "Libro y archivo eliminados correctamente" });
-
   } catch (error) {
-    console.error("❌ Error al eliminar libro:", error);
+    console.error("❌ Error general en eliminarLibro:", error);
     res.status(500).json({ error: "Error al eliminar libro" });
   }
 }
-
 
 module.exports = {
   crearLibro,
